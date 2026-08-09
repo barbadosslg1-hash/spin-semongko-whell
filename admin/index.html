@@ -291,9 +291,9 @@ td{font-size:13px}
               <div class="field"><label>Teks Welcome</label><input data-path="site.welcomeText"></div>
               <div class="field full"><label>Logo URL</label><input data-path="site.logoUrl" placeholder="https://..."></div>
               <div class="field full"><label>Background URL</label><input data-path="site.backgroundUrl" placeholder="https://..."></div>
-              <div class="field"><label>Warna Utama</label><input type="color" data-path="site.primaryColor"></div>
-              <div class="field"><label>Warna Sekunder</label><input type="color" data-path="site.secondaryColor"></div>
-              <div class="field"><label>Warna Aksen</label><input type="color" data-path="site.accentColor"></div>
+              <div class="field"><label>Warna Utama</label><div class="color-cell"><input type="color" data-path="site.primaryColor" data-role="picker"><input type="text" class="hex-input" data-path="site.primaryColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
+              <div class="field"><label>Warna Sekunder</label><div class="color-cell"><input type="color" data-path="site.secondaryColor" data-role="picker"><input type="text" class="hex-input" data-path="site.secondaryColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
+              <div class="field"><label>Warna Aksen</label><div class="color-cell"><input type="color" data-path="site.accentColor" data-role="picker"><input type="text" class="hex-input" data-path="site.accentColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Footer</label><input data-path="site.footerText"></div>
               <label class="check"><input type="checkbox" data-path="site.showWelcome"> Tampilkan welcome popup</label>
             </div>
@@ -454,6 +454,7 @@ function normalizeClient(){
 
 function readFormIntoConfig(){
   document.querySelectorAll("[data-path]").forEach(el=>{
+    if (el.dataset.role === "hex") return; // dibaca dari pasangan color picker-nya saja
     const path = el.dataset.path;
     let value;
     if(el.type === "checkbox") value = el.checked;
@@ -801,8 +802,34 @@ $("addTicketBtn").onclick=addTicket;
 document.querySelectorAll("[data-save]").forEach(btn=>btn.onclick=saveConfig);
 
 document.querySelectorAll("[data-path]").forEach(el=>{
-  el.addEventListener("input",()=>{
-    if(el.dataset.path.startsWith("site.")) updatePreview();
+  const isHex = el.dataset.role === "hex";
+  const isPicker = el.dataset.role === "picker";
+  const eventName = isPicker ? "input" : "change";
+
+  el.addEventListener(eventName, () => {
+    if (el.dataset.path.startsWith("site.")) updatePreview();
+    if (!isHex && !isPicker) return;
+
+    const path = el.dataset.path;
+    let value = el.value;
+    if (isHex) {
+      let v = value.trim();
+      if (v && !v.startsWith("#")) v = "#" + v;
+      if (!/^#[0-9a-fA-F]{6}$/.test(v)) {
+        el.classList.add("invalid");
+        return; // tunggu sampai kode HEX-nya valid (#rrggbb)
+      }
+      el.classList.remove("invalid");
+      value = v.toLowerCase();
+      el.value = value;
+    }
+
+    document.querySelectorAll(`[data-path="${path}"]`).forEach(pair => {
+      if (pair !== el && (pair.dataset.role === "hex" || pair.dataset.role === "picker")) {
+        pair.value = value;
+        pair.classList.remove("invalid");
+      }
+    });
   });
 });
 
