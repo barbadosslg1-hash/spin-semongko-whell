@@ -34,7 +34,7 @@ function drawWheel(){
 
   const wheelBox = document.getElementById('wheelBox');
   const cssSize = Math.max(240, Math.round(wheelBox.clientWidth || 400));
-  const cssMargin = Math.max(6, Math.round(cssSize * 0.02));
+  const cssMargin = Math.max(18, Math.round(cssSize * 0.075));
   const outerRcss = (cssSize / 2) - cssMargin;
   const innerRcss = outerRcss * innerFraction;
 
@@ -62,9 +62,9 @@ function drawWheel(){
 
   // Batas lebar teks (dalam CSS px dulu) supaya tidak mepet tepi luar
   // maupun turun sampai tertutup lubang tengah.
-  const textMarginCss = Math.max(6, Math.round(outerRcss * 0.15));
+  const textMarginCss = Math.max(6, Math.round(outerRcss * 0.18));
   const availableBandCss = (outerRcss - textMarginCss) - innerRcss;
-  const maxTextWidthCss = Math.max(12, availableBandCss * 0.85);
+  const maxTextWidthCss = Math.max(12, availableBandCss * 0.78);
 
   const measureCtx = document.createElement('canvas').getContext('2d');
   function widthAt(fontSizeCss, text){
