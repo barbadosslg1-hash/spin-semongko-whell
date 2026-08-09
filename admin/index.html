@@ -167,6 +167,8 @@ td{font-size:13px}
 .loading{opacity:.65;pointer-events:none}
 .color-cell{display:flex;align-items:center;gap:8px}
 .color-dot{width:25px;height:25px;border-radius:7px;border:1px solid #fff3}
+.hex-input{width:92px;padding:8px 9px;font-family:ui-monospace,Consolas,monospace;text-transform:lowercase}
+.hex-input.invalid{border-color:#ff4d5a}
 .preview{
   border:1px solid var(--line);border-radius:14px;padding:14px;
   background:linear-gradient(135deg,#11151b,#0a0d12);
@@ -598,8 +600,14 @@ function renderPrizeTable(){
     <tr class="segment-row">
       <td>${i+1}</td>
       <td><input value="${esc(p.label)}" data-prize="${i}" data-key="label"></td>
-      <td><div class="color-cell"><input type="color" value="${/^#[0-9a-f]{6}$/i.test(p.color)?p.color:"#ff0000"}" data-prize="${i}" data-key="color"><span class="color-dot" style="background:${esc(p.color)}"></span></div></td>
-      <td><input type="color" value="${/^#[0-9a-f]{6}$/i.test(p.textColor)?p.textColor:"#ffffff"}" data-prize="${i}" data-key="textColor"></td>
+      <td><div class="color-cell">
+        <input type="color" value="${/^#[0-9a-f]{6}$/i.test(p.color)?p.color:"#ff0000"}" data-prize="${i}" data-key="color" data-role="picker">
+        <input type="text" class="hex-input" value="${esc(p.color)}" data-prize="${i}" data-key="color" data-role="hex" maxlength="7" placeholder="#rrggbb">
+      </div></td>
+      <td><div class="color-cell">
+        <input type="color" value="${/^#[0-9a-f]{6}$/i.test(p.textColor)?p.textColor:"#ffffff"}" data-prize="${i}" data-key="textColor" data-role="picker">
+        <input type="text" class="hex-input" value="${esc(p.textColor)}" data-prize="${i}" data-key="textColor" data-role="hex" maxlength="7" placeholder="#rrggbb">
+      </div></td>
       <td><input type="number" min="0" step="0.01" value="${Number(p.weight)||0}" data-prize="${i}" data-key="weight"></td>
       <td><label class="check"><input type="checkbox" ${p.enabled!==false?"checked":""} data-prize="${i}" data-key="enabled"> Aktif</label></td>
       <td><div class="segment-actions">
@@ -612,11 +620,44 @@ function renderPrizeTable(){
   $("prizeTable").innerHTML = rows || `<tr><td colspan="7" class="muted">Belum ada hadiah.</td></tr>`;
 
   document.querySelectorAll("[data-prize]").forEach(el=>{
-    el.addEventListener("change",()=>{
+    const isHex = el.dataset.role === "hex";
+    const isPicker = el.dataset.role === "picker";
+    const eventName = isPicker ? "input" : "change";
+
+    el.addEventListener(eventName, () => {
       const i = Number(el.dataset.prize);
       const key = el.dataset.key;
-      config.wheel.segments[i][key] = el.type==="checkbox" ? el.checked :
-        el.type==="number" ? Number(el.value) : el.value;
+      let value;
+
+      if (el.type === "checkbox") {
+        value = el.checked;
+      } else if (el.type === "number") {
+        value = Number(el.value);
+      } else if (isHex) {
+        let v = el.value.trim();
+        if (v && !v.startsWith("#")) v = "#" + v;
+        if (!/^#[0-9a-fA-F]{6}$/.test(v)) {
+          el.classList.add("invalid");
+          return; // jangan terapkan sampai formatnya valid (#rrggbb)
+        }
+        el.classList.remove("invalid");
+        value = v.toLowerCase();
+      } else {
+        value = el.value;
+      }
+
+      config.wheel.segments[i][key] = value;
+
+      // sinkronkan pasangan color picker <-> kotak hex untuk baris & key yang sama
+      if (isHex || isPicker) {
+        document.querySelectorAll(`[data-prize="${i}"][data-key="${key}"]`).forEach(pair => {
+          if (pair !== el) {
+            pair.value = value;
+            pair.classList.remove("invalid");
+          }
+        });
+      }
+
       updateTicketPrizeOptions();
       renderStats();
     });
