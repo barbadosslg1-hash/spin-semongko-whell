@@ -193,7 +193,9 @@ td{font-size:13px}
 </head>
 <body>
 
-<div id="loginView" class="login-page">
+<div id="bootLoading" class="login-page"><div class="muted">Memuat…</div></div>
+
+<div id="loginView" class="login-page hidden">
   <form id="loginForm" class="login-card">
     <h1>Admin Panel</h1>
     <p>Kelola penuh website Lucky Wheel.</p>
@@ -810,8 +812,14 @@ document.querySelectorAll("[data-path]").forEach(el=>{
     if(data.authenticated){
       currentUser=data.username||"admin";
       await openApp();
+    } else {
+      $("loginView").classList.remove("hidden");
     }
-  }catch{}
+  }catch{
+    $("loginView").classList.remove("hidden");
+  } finally {
+    $("bootLoading").classList.add("hidden");
+  }
 })();
 </script>
 </body>
