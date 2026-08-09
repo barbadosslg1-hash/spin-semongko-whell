@@ -28,10 +28,11 @@ function drawWheel(){
   const outerR = Math.max(120, Number(cfg.wheel.outerRadius) || 220);
   const innerR = Math.max(0, Number(cfg.wheel.innerRadius) || 60);
 
-  // Canvas otomatis menyesuaikan ukuran roda supaya tidak terpotong,
-  // apa pun outerRadius yang diatur di admin panel.
+  // Canvas otomatis menyesuaikan ukuran roda + margin ekstra di semua sisi,
+  // supaya teks di tepi roda (dekat pointer) tidak terpotong batas canvas.
   const canvas = document.getElementById('wheel');
-  const size = Math.round(outerR * 2 + 60);
+  const margin = Math.max(50, Math.round(outerR * 0.18));
+  const size = Math.round(outerR * 2 + margin * 2);
   canvas.width = size;
   canvas.height = size;
 
@@ -39,9 +40,9 @@ function drawWheel(){
   // supaya teks tidak tumpang tindih atau terpotong di roda kecil.
   const baseFont = Number(cfg.wheel.textFontSize) || 18;
   const maxLabelLen = Math.max(...seg.map(s => String(s.label || '').length), 1);
-  const byCount = Math.floor((outerR - innerR) / (seg.length * 0.9));
-  const byLength = Math.floor((outerR - innerR) * 1.6 / maxLabelLen);
-  const autoFont = Math.max(10, Math.min(baseFont, byCount, byLength));
+  const byCount = Math.floor((outerR - innerR) / (seg.length * 0.95));
+  const byLength = Math.floor((outerR - innerR) * 1.35 / maxLabelLen);
+  const autoFont = Math.max(9, Math.min(baseFont, byCount, byLength));
 
   wheel = new Winwheel({
     canvasId: 'wheel',
@@ -51,8 +52,8 @@ function drawWheel(){
     outerRadius: outerR,
     innerRadius: innerR,
     textFontSize: autoFont,
-    textMargin: Math.max(6, Math.round(outerR * 0.06)),
-    textAlignment: 'outer',
+    textMargin: Math.max(10, Math.round(outerR * 0.14)),
+    textAlignment: 'center',
     segments: seg.map(s => ({ fillStyle: s.color, text: s.label, textFillStyle: s.textColor })),
     animation: { type: 'spinToStop', duration: Number(cfg.wheel.duration) || 4, spins: Number(cfg.wheel.spins) || 10 }
   });
