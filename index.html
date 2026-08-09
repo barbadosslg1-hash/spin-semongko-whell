@@ -60,11 +60,11 @@ function drawWheel(){
   hub.style.top = Math.round(cssMargin + outerRcss - hubDiameter / 2) + 'px';
   hub.style.backgroundImage = cfg.site.wheelLogoUrl ? `url(${CSS.escape(cfg.site.wheelLogoUrl)})` : 'none';
 
-  // Batas lebar teks (dalam CSS px dulu) supaya tidak mepet tepi luar
+  // Batas lebar teks (dalam CSS px) supaya tidak mepet tepi luar
   // maupun turun sampai tertutup lubang tengah.
-  const textMarginCss = Math.max(6, Math.round(outerRcss * 0.18));
+  const textMarginCss = Math.max(6, Math.round(outerRcss * 0.12));
   const availableBandCss = (outerRcss - textMarginCss) - innerRcss;
-  const maxTextWidthCss = Math.max(12, availableBandCss * 0.78);
+  const maxTextWidthCss = Math.max(12, availableBandCss * 0.92);
 
   const measureCtx = document.createElement('canvas').getContext('2d');
   function widthAt(fontSizeCss, text){
@@ -79,6 +79,9 @@ function drawWheel(){
     fontSizeCss -= 1;
   }
 
+  // Winwheel HANYA dipakai untuk menggambar juring warna (itu sudah
+  // selalu tepat) — teks TIDAK diserahkan ke Winwheel karena mesin
+  // teks bawaannya sering memotong kata secara tidak konsisten.
   wheel = new Winwheel({
     canvasId: 'wheel',
     centerX: pixelSize / 2,
@@ -86,12 +89,34 @@ function drawWheel(){
     numSegments: seg.length,
     outerRadius: outerRcss * dpr,
     innerRadius: innerRcss * dpr,
-    textFontSize: fontSizeCss * dpr,
-    textFontFamily: 'Arial, sans-serif',
-    textMargin: textMarginCss * dpr,
-    textAlignment: 'outer',
-    segments: seg.map(s => ({ fillStyle: s.color, text: s.label, textFillStyle: s.textColor })),
+    segments: seg.map(s => ({ fillStyle: s.color, text: '' })),
     animation: { type: 'spinToStop', duration: Number(cfg.wheel.duration) || 4, spins: Number(cfg.wheel.spins) || 10 }
+  });
+
+  drawLabels(seg, pixelSize, outerRcss, innerRcss, fontSizeCss, dpr);
+}
+
+function drawLabels(seg, pixelSize, outerRcss, innerRcss, fontSizeCss, dpr){
+  const canvas = document.getElementById('wheel');
+  const ctx = canvas.getContext('2d');
+  const midRadius = ((innerRcss + outerRcss) / 2) * dpr;
+  const angleStep = 360 / seg.length;
+
+  seg.forEach((s, i) => {
+    // 0 derajat Winwheel = arah jam 12 (atas), searah jarum jam — sama
+    // seperti posisi juring warna yang sudah tergambar oleh Winwheel.
+    const midAngleDeg = angleStep * i + angleStep / 2;
+    const canvasAngleRad = (midAngleDeg - 90) * Math.PI / 180;
+
+    ctx.save();
+    ctx.translate(pixelSize / 2, pixelSize / 2);
+    ctx.rotate(canvasAngleRad);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = s.textColor || '#ffffff';
+    ctx.font = `bold ${fontSizeCss * dpr}px Arial, sans-serif`;
+    ctx.fillText(String(s.label || ''), midRadius, 0);
+    ctx.restore();
   });
 }
 
