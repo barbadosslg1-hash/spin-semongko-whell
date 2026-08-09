@@ -28,10 +28,11 @@ function drawWheel(){
   const outerR = Math.max(120, Number(cfg.wheel.outerRadius) || 220);
   const innerR = Math.max(0, Number(cfg.wheel.innerRadius) || 60);
 
-  // Canvas otomatis menyesuaikan ukuran roda + margin ekstra di semua sisi,
-  // supaya teks di tepi roda (dekat pointer) tidak terpotong batas canvas.
+  // Canvas menyesuaikan ukuran roda dengan margin secukupnya saja —
+  // karena teks sekarang diposisikan di tengah (bukan di tepi luar),
+  // roda tetap rapat ke pointer seperti sebelumnya, tanpa teks terpotong.
   const canvas = document.getElementById('wheel');
-  const margin = Math.max(50, Math.round(outerR * 0.18));
+  const margin = Math.max(18, Math.round(outerR * 0.05));
   const size = Math.round(outerR * 2 + margin * 2);
   canvas.width = size;
   canvas.height = size;
