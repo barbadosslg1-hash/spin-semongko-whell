@@ -1,777 +1,151 @@
-<!doctype html>
-<html lang="id">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin Panel — Lucky Wheel</title>
-<meta name="description" content="Admin Panel Lucky Wheel">
-<style>
-:root{
-  --bg:#07090d;
-  --panel:#11151b;
-  --panel2:#171c24;
-  --line:#29313c;
-  --text:#f5f7fa;
-  --muted:#9ba6b5;
-  --red:#e20a16;
-  --gold:#ffd700;
-  --green:#20c56b;
-  --blue:#4c8dff;
-  --danger:#ff4d5a;
-  --shadow:0 20px 60px rgba(0,0,0,.35);
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0;
-  min-height:100vh;
-  background:
-    radial-gradient(circle at 10% 0%,rgba(226,10,22,.12),transparent 28%),
-    radial-gradient(circle at 90% 10%,rgba(255,215,0,.08),transparent 25%),
-    var(--bg);
-  color:var(--text);
-  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
-}
-button,input,textarea,select{font:inherit}
-button{cursor:pointer}
-.hidden{display:none!important}
-.muted{color:var(--muted)}
-.small{font-size:12px}
-.wrap{max-width:1450px;margin:auto;padding:28px}
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;gap:18px;
-  margin-bottom:24px;
-}
-.brand h1{margin:0;font-size:28px;letter-spacing:-.5px}
-.brand p{margin:5px 0 0;color:var(--muted)}
-.top-actions{display:flex;gap:10px;flex-wrap:wrap}
-.btn{
-  border:1px solid var(--line);
-  background:#171d25;color:#fff;
-  border-radius:10px;padding:11px 15px;font-weight:800;
-  transition:.18s ease;
-}
-.btn:hover{transform:translateY(-1px);border-color:#46515f}
-.btn.primary{background:linear-gradient(135deg,#f01625,#9b0009);border-color:#ef1a28}
-.btn.success{background:#137a43;border-color:#1aa95f}
-.btn.danger{background:#5f1118;border-color:#9f222d}
-.btn.blue{background:#1b4e9f;border-color:#3979e2}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.grid{
-  display:grid;
-  grid-template-columns:230px minmax(0,1fr);
-  gap:20px;
-  align-items:start;
-}
-.sidebar{
-  position:sticky;top:20px;
-  background:rgba(17,21,27,.92);
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:12px;
-  box-shadow:var(--shadow);
-}
-.navbtn{
-  width:100%;text-align:left;border:0;background:transparent;color:#cbd3de;
-  padding:12px;border-radius:10px;font-weight:750;margin-bottom:4px;
-}
-.navbtn:hover,.navbtn.active{background:#202733;color:#fff}
-.navbtn.active{box-shadow:inset 3px 0 var(--red)}
-.content{min-width:0}
-.section{display:none}
-.section.active{display:block}
-.card{
-  background:rgba(17,21,27,.94);
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:20px;
-  box-shadow:var(--shadow);
-  margin-bottom:18px;
-}
-.card h2{margin:0 0 6px;font-size:21px}
-.card h3{margin:0 0 14px;font-size:16px}
-.card-head{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  margin-bottom:16px;
-}
-.form-grid{
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;
-}
-.form-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
-.field{display:flex;flex-direction:column;gap:7px}
-.field.full{grid-column:1/-1}
-label{font-size:13px;font-weight:750;color:#d9e0e9}
-input,textarea,select{
-  width:100%;
-  background:#080b10;
-  border:1px solid #303946;
-  color:#fff;
-  border-radius:9px;
-  padding:11px 12px;
-  outline:none;
-}
-input:focus,textarea:focus,select:focus{border-color:#5b77a5;box-shadow:0 0 0 3px rgba(76,141,255,.12)}
-textarea{min-height:90px;resize:vertical}
-input[type=color]{padding:3px;height:44px}
-input[type=checkbox]{width:18px;height:18px;accent-color:var(--red)}
-.check{display:flex;align-items:center;gap:9px;color:#dce3eb}
-.notice{
-  padding:12px 14px;border-radius:10px;background:#0d263a;
-  border:1px solid #174c70;color:#bfe5ff;margin-bottom:16px;
-}
-.stats{
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;
-}
-.stat{
-  background:#151a22;border:1px solid var(--line);border-radius:14px;padding:17px;
-}
-.stat strong{display:block;font-size:28px;margin-top:5px}
-.table-wrap{overflow:auto}
-table{width:100%;border-collapse:collapse;min-width:900px}
-th,td{padding:11px 10px;border-bottom:1px solid #242c36;text-align:left;vertical-align:middle}
-th{color:#aeb8c5;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
-td{font-size:13px}
-.segment-row{background:#0d1117}
-.segment-actions{display:flex;gap:7px;flex-wrap:wrap}
-.icon-btn{
-  border:1px solid var(--line);background:#151b23;color:#fff;border-radius:8px;
-  padding:7px 10px;font-weight:800;
-}
-.icon-btn.danger{color:#ff8b94;border-color:#64232a}
-.status{
-  display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;
-  font-size:11px;font-weight:800;
-}
-.status.active{background:#103e28;color:#65e99d}
-.status.used{background:#332c13;color:#f7d96b}
-.status.expired{background:#3a171c;color:#ff8790}
-.ticket-tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.log{
-  padding:12px 0;border-bottom:1px solid #252c35;
-  display:flex;justify-content:space-between;gap:20px;
-}
-.login-page{
-  min-height:100vh;display:grid;place-items:center;padding:20px;
-}
-.login-card{
-  width:min(440px,100%);
-  background:rgba(17,21,27,.96);
-  border:1px solid var(--line);border-radius:20px;padding:28px;
-  box-shadow:var(--shadow);
-}
-.login-card h1{font-size:32px;margin:0 0 8px}
-.login-card p{color:var(--muted)}
-.login-card .btn{width:100%;margin-top:12px}
-.error{color:#ff7f88;margin-top:12px;font-size:14px}
-.success-msg{color:#65e99d;margin-top:12px;font-size:14px}
-.loading{opacity:.65;pointer-events:none}
-.color-cell{display:flex;align-items:center;gap:8px}
-.color-dot{width:25px;height:25px;border-radius:7px;border:1px solid #fff3}
-.preview{
-  border:1px solid var(--line);border-radius:14px;padding:14px;
-  background:linear-gradient(135deg,#11151b,#0a0d12);
-}
-.preview-title{font-size:20px;font-weight:900;margin-bottom:5px}
-.preview-sub{color:var(--muted)}
-.footer-note{color:#778290;font-size:12px;text-align:center;padding:10px}
-@media(max-width:1000px){
-  .grid{grid-template-columns:1fr}
-  .sidebar{position:static;display:flex;overflow:auto;gap:5px}
-  .navbtn{white-space:nowrap;width:auto;margin:0}
-  .stats{grid-template-columns:repeat(2,1fr)}
-}
-@media(max-width:700px){
-  .wrap{padding:15px}
-  .topbar{align-items:flex-start;flex-direction:column}
-  .form-grid,.form-grid.three{grid-template-columns:1fr}
-  .stats{grid-template-columns:1fr 1fr}
-  .card{padding:15px}
-}
-</style>
-</head>
-<body>
+import { getStore } from "@netlify/blobs";
+   import crypto from "node:crypto";
 
-<div id="loginView" class="login-page">
-  <form id="loginForm" class="login-card">
-    <h1>Admin Panel</h1>
-    <p>Kelola penuh website Lucky Wheel.</p>
-    <div class="field">
-      <label for="loginUser">Username</label>
-      <input id="loginUser" autocomplete="username" required>
-    </div>
-    <div class="field" style="margin-top:12px">
-      <label for="loginPass">Password</label>
-      <input id="loginPass" type="password" autocomplete="current-password" required>
-    </div>
-    <button id="loginBtn" class="btn primary" type="submit">LOGIN</button>
-    <div id="loginMsg" class="error"></div>
-  </form>
-</div>
+const STORE_NAME = "luckywheel";
+const CONFIG_KEY = "config";
+const LOG_KEY = "logs";
+const SESSION_COOKIE = "sw_admin";
+const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 jam
 
-<div id="appView" class="hidden">
-  <div class="wrap">
-    <header class="topbar">
-      <div class="brand">
-        <h1>Lucky Wheel — Admin</h1>
-        <p id="welcomeAdmin">Panel pengelolaan website</p>
-      </div>
-      <div class="top-actions">
-        <button class="btn" id="reloadBtn">↻ Muat Ulang</button>
-        <button class="btn danger" id="logoutBtn">Logout</button>
-      </div>
-    </header>
-
-    <div class="grid">
-      <aside class="sidebar">
-        <button class="navbtn active" data-section="dashboard">Dashboard</button>
-        <button class="navbtn" data-section="site">Website</button>
-        <button class="navbtn" data-section="wheel">Lucky Wheel</button>
-        <button class="navbtn" data-section="claim">Klaim</button>
-        <button class="navbtn" data-section="messages">Pesan</button>
-        <button class="navbtn" data-section="tickets">Kode Tiket</button>
-        <button class="navbtn" data-section="logs">Audit Log</button>
-      </aside>
-
-      <main class="content">
-        <div id="globalMsg"></div>
-
-        <section id="section-dashboard" class="section active">
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h2>Dashboard</h2>
-                <div class="muted">Ringkasan konfigurasi dan aktivitas.</div>
-              </div>
-              <button class="btn primary" id="saveTopBtn">Simpan Semua</button>
-            </div>
-            <div class="stats">
-              <div class="stat"><span class="muted">Hadiah</span><strong id="statPrizes">0</strong></div>
-              <div class="stat"><span class="muted">Hadiah Aktif</span><strong id="statActive">0</strong></div>
-              <div class="stat"><span class="muted">Tiket Aktif</span><strong id="statTickets">0</strong></div>
-              <div class="stat"><span class="muted">Audit Log</span><strong id="statLogs">0</strong></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3>Preview Website</h3>
-            <div class="preview">
-              <div class="preview-title" id="previewTitle">Lucky Wheel</div>
-              <div class="preview-sub" id="previewSubtitle">Masukkan kode tiket untuk memulai putaran.</div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3>Kontrol Sistem</h3>
-            <div class="top-actions">
-              <button class="btn success" id="saveBtn">💾 Simpan Konfigurasi</button>
-              <button class="btn" id="resetBtn">↺ Reset ke Default</button>
-              <button class="btn danger" id="clearLogsBtn">🗑 Hapus Audit Log</button>
-            </div>
-            <p class="muted small" style="margin-bottom:0">
-              Perubahan disimpan melalui Admin API ke Netlify Blobs dan akan dibaca oleh website publik.
-            </p>
-          </div>
-        </section>
-
-        <section id="section-site" class="section">
-          <div class="card">
-            <div class="card-head">
-              <div><h2>Pengaturan Website</h2><div class="muted">Ubah identitas dan tampilan dasar.</div></div>
-              <button class="btn success" data-save>💾 Simpan</button>
-            </div>
-            <div class="form-grid">
-              <div class="field"><label>Nama Website</label><input data-path="site.name"></div>
-              <div class="field"><label>Judul Browser</label><input data-path="site.title"></div>
-              <div class="field full"><label>Subtitle</label><input data-path="site.subtitle"></div>
-              <div class="field"><label>Judul Welcome</label><input data-path="site.welcomeTitle"></div>
-              <div class="field"><label>Teks Welcome</label><input data-path="site.welcomeText"></div>
-              <div class="field full"><label>Logo URL</label><input data-path="site.logoUrl" placeholder="https://..."></div>
-              <div class="field full"><label>Background URL</label><input data-path="site.backgroundUrl" placeholder="https://..."></div>
-              <div class="field"><label>Warna Utama</label><input type="color" data-path="site.primaryColor"></div>
-              <div class="field"><label>Warna Sekunder</label><input type="color" data-path="site.secondaryColor"></div>
-              <div class="field"><label>Warna Aksen</label><input type="color" data-path="site.accentColor"></div>
-              <div class="field"><label>Footer</label><input data-path="site.footerText"></div>
-              <label class="check"><input type="checkbox" data-path="site.showWelcome"> Tampilkan welcome popup</label>
-            </div>
-          </div>
-        </section>
-
-        <section id="section-wheel" class="section">
-          <div class="card">
-            <div class="card-head">
-              <div><h2>Pengaturan Lucky Wheel</h2><div class="muted">Atur durasi, putaran, ukuran dan teks wheel.</div></div>
-              <button class="btn success" data-save>💾 Simpan</button>
-            </div>
-            <div class="form-grid three">
-              <div class="field"><label>Durasi (detik)</label><input type="number" min="1" max="30" data-path="wheel.duration"></div>
-              <div class="field"><label>Jumlah Spin</label><input type="number" min="1" max="100" data-path="wheel.spins"></div>
-              <div class="field"><label>Outer Radius</label><input type="number" min="50" max="300" data-path="wheel.outerRadius"></div>
-              <div class="field"><label>Inner Radius</label><input type="number" min="0" max="250" data-path="wheel.innerRadius"></div>
-              <div class="field"><label>Ukuran Font</label><input type="number" min="8" max="50" data-path="wheel.textFontSize"></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head">
-              <div><h2>Daftar Hadiah</h2><div class="muted">Weight lebih besar berarti peluang relatif lebih besar.</div></div>
-              <button class="btn primary" id="addPrizeBtn">+ Tambah Hadiah</button>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th><th>Label</th><th>Warna</th><th>Text</th><th>Weight</th><th>Aktif</th><th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="prizeTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section id="section-claim" class="section">
-          <div class="card">
-            <div class="card-head">
-              <div><h2>Pengaturan Klaim</h2><div class="muted">Kontak dan tombol klaim pada hasil kemenangan.</div></div>
-              <button class="btn success" data-save>💾 Simpan</button>
-            </div>
-            <div class="form-grid">
-              <div class="field"><label>Nomor WhatsApp</label><input data-path="claim.whatsapp" placeholder="628xxxxxxxxxx"></div>
-              <div class="field"><label>Label Tombol Klaim</label><input data-path="claim.claimLabel"></div>
-              <div class="field full"><label>Pesan WhatsApp</label><textarea data-path="claim.whatsappMessage"></textarea></div>
-              <div class="field"><label>Instagram URL</label><input data-path="claim.instagram"></div>
-              <div class="field"><label>Facebook URL</label><input data-path="claim.facebook"></div>
-              <div class="field"><label>Twitter/X URL</label><input data-path="claim.twitter"></div>
-            </div>
-          </div>
-        </section>
-
-        <section id="section-messages" class="section">
-          <div class="card">
-            <div class="card-head">
-              <div><h2>Pesan Website</h2><div class="muted">Gunakan <b>{PRIZE}</b> untuk nama hadiah.</div></div>
-              <button class="btn success" data-save>💾 Simpan</button>
-            </div>
-            <div class="form-grid">
-              <div class="field"><label>Judul Menang</label><input data-path="messages.winTitle"></div>
-              <div class="field"><label>Pesan Menang</label><input data-path="messages.winText"></div>
-              <div class="field full"><label>Pesan Status</label><input data-path="messages.lossText"></div>
-              <div class="field"><label>Kode Tidak Valid</label><textarea data-path="messages.invalidCode"></textarea></div>
-              <div class="field"><label>Kode Kadaluarsa</label><textarea data-path="messages.expiredCode"></textarea></div>
-              <div class="field full"><label>Kesalahan Sistem</label><textarea data-path="messages.systemError"></textarea></div>
-            </div>
-          </div>
-        </section>
-
-        <section id="section-tickets" class="section">
-          <div class="card">
-            <div class="card-head">
-              <div><h2>Kode Tiket</h2><div class="muted">Tiket disimpan bersama konfigurasi dan dipakai satu kali.</div></div>
-            </div>
-            <div class="notice">
-              <b>Catatan:</b> Jika <code>prizeId</code> diisi, tiket akan diarahkan ke hadiah tersebut.
-              Jika kosong, hasil akan dipilih berdasarkan <b>weight</b> hadiah aktif.
-            </div>
-
-            <div class="ticket-tools">
-              <input id="newTicketCode" placeholder="Kode tiket, contoh: SEMONGKO001">
-              <select id="newTicketPrize"><option value="">Acak berdasarkan weight</option></select>
-              <button class="btn primary" id="addTicketBtn">+ Tambah Tiket</button>
-            </div>
-
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Kode</th><th>Hadiah Tetap</th><th>Status</th><th>Dibuat</th><th>Digunakan</th><th>Pemenang</th><th>Aksi</th></tr></thead>
-                <tbody id="ticketTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section id="section-logs" class="section">
-          <div class="card">
-            <div class="card-head">
-              <div><h2>Audit Log</h2><div class="muted">Aktivitas login, simpan konfigurasi dan spin.</div></div>
-              <button class="btn danger" id="clearLogsBtn2">🗑 Hapus Log</button>
-            </div>
-            <div id="logList"></div>
-          </div>
-        </section>
-
-        <div class="footer-note">Admin Panel terhubung ke Netlify Functions + Netlify Blobs.</div>
-      </main>
-    </div>
-  </div>
-</div>
-
-<script>
-const $ = id => document.getElementById(id);
-const API_AUTH = "/api/admin-auth";
-const API_ADMIN = "/api/admin-api";
-
-let config = null;
-let logs = [];
-let currentUser = "";
-
-function esc(value){
-  return String(value ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[c]));
-}
-
-function deepGet(obj,path){
-  return path.split(".").reduce((v,k)=>v?.[k],obj);
-}
-
-function deepSet(obj,path,value){
-  const parts = path.split(".");
-  let cur = obj;
-  parts.forEach((p,i)=>{
-    if(i === parts.length-1) cur[p] = value;
-    else cur = cur[p] ??= {};
-  });
-}
-
-function flash(message, type="success"){
-  $("globalMsg").innerHTML =
-    `<div class="${type==="error" ? "notice" : "notice"}" style="${type==="error" ? "background:#3a171c;border-color:#71232c;color:#ffb2b8" : ""}">${esc(message)}</div>`;
-  setTimeout(()=>{$("globalMsg").innerHTML=""},4500);
-}
-
-function normalizeClient(){
-  if(!config) return;
-  config.site ||= {};
-  config.wheel ||= {};
-  config.wheel.segments ||= [];
-  config.claim ||= {};
-  config.messages ||= {};
-  config.tickets ||= [];
-}
-
-function readFormIntoConfig(){
-  document.querySelectorAll("[data-path]").forEach(el=>{
-    const path = el.dataset.path;
-    let value;
-    if(el.type === "checkbox") value = el.checked;
-    else if(el.type === "number") value = Number(el.value);
-    else value = el.value;
-    deepSet(config,path,value);
-  });
-}
-
-function fillForm(){
-  document.querySelectorAll("[data-path]").forEach(el=>{
-    const value = deepGet(config,el.dataset.path);
-    if(el.type === "checkbox") el.checked = Boolean(value);
-    else el.value = value ?? "";
-  });
-  updatePreview();
-}
-
-function updatePreview(){
-  $("previewTitle").textContent = config?.site?.name || "Lucky Wheel";
-  $("previewSubtitle").textContent = config?.site?.subtitle || "";
-}
-
-async function api(url, options={}){
-  const res = await fetch(url,{
-    credentials:"same-origin",
-    ...options,
-    headers:{"content-type":"application/json",...(options.headers||{})}
-  });
-  let data = {};
-  try{ data = await res.json(); }catch{}
-  if(!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-  return data;
-}
-
-async function login(e){
-  e.preventDefault();
-  $("loginMsg").textContent = "";
-  $("loginBtn").disabled = true;
-  try{
-    const data = await api(API_AUTH,{
-      method:"POST",
-      body:JSON.stringify({
-        action:"login",
-        username:$("loginUser").value.trim(),
-        password:$("loginPass").value
-      })
-    });
-    currentUser = data.username || $("loginUser").value.trim();
-    await openApp();
-  }catch(err){
-    $("loginMsg").textContent = err.message;
-  }finally{
-    $("loginBtn").disabled = false;
-  }
-}
-
-async function openApp(){
-  $("loginView").classList.add("hidden");
-  $("appView").classList.remove("hidden");
-  $("welcomeAdmin").textContent = `Login sebagai ${currentUser}`;
-  await loadAdmin();
-}
-
-async function loadAdmin(){
-  try{
-    const data = await api(API_ADMIN,{method:"GET"});
-    config = data.config;
-    logs = Array.isArray(data.logs) ? data.logs : [];
-    normalizeClient();
-    fillForm();
-    renderAll();
-  }catch(err){
-    $("appView").classList.add("hidden");
-    $("loginView").classList.remove("hidden");
-    $("loginMsg").textContent = err.message;
-  }
-}
-
-async function saveConfig(){
-  if(!config) return;
-  readFormIntoConfig();
-  try{
-    const data = await api(API_ADMIN,{
-      method:"POST",
-      body:JSON.stringify({action:"save",config})
-    });
-    config = data.config;
-    normalizeClient();
-    fillForm();
-    renderAll();
-    flash("Konfigurasi berhasil disimpan.");
-  }catch(err){ flash(err.message,"error"); }
-}
-
-async function resetConfig(){
-  if(!confirm("Reset semua konfigurasi ke default? Data tiket juga akan kembali ke default kosong.")) return;
-  try{
-    const data = await api(API_ADMIN,{
-      method:"POST",
-      body:JSON.stringify({action:"reset"})
-    });
-    config = data.config;
-    normalizeClient();
-    fillForm();
-    renderAll();
-    flash("Konfigurasi berhasil di-reset.");
-  }catch(err){ flash(err.message,"error"); }
-}
-
-async function clearLogs(){
-  if(!confirm("Hapus seluruh audit log?")) return;
-  try{
-    await api(API_ADMIN,{
-      method:"POST",
-      body:JSON.stringify({action:"clear_logs"})
-    });
-    logs = [];
-    renderStats();
-    renderLogs();
-    flash("Audit log berhasil dihapus.");
-  }catch(err){ flash(err.message,"error"); }
-}
-
-async function logout(){
-  try{
-    await api(API_AUTH,{
-      method:"POST",
-      body:JSON.stringify({action:"logout"})
-    });
-  }catch{}
-  location.reload();
-}
-
-function renderStats(){
-  const prizes = config?.wheel?.segments || [];
-  const tickets = config?.tickets || [];
-  $("statPrizes").textContent = prizes.length;
-  $("statActive").textContent = prizes.filter(p=>p.enabled!==false).length;
-  $("statTickets").textContent = tickets.filter(t=>t.status==="active").length;
-  $("statLogs").textContent = logs.length;
-}
-
-function renderPrizeTable(){
-  const rows = config.wheel.segments.map((p,i)=>`
-    <tr class="segment-row">
-      <td>${i+1}</td>
-      <td><input value="${esc(p.label)}" data-prize="${i}" data-key="label"></td>
-      <td><div class="color-cell"><input type="color" value="${/^#[0-9a-f]{6}$/i.test(p.color)?p.color:"#ff0000"}" data-prize="${i}" data-key="color"><span class="color-dot" style="background:${esc(p.color)}"></span></div></td>
-      <td><input type="color" value="${/^#[0-9a-f]{6}$/i.test(p.textColor)?p.textColor:"#ffffff"}" data-prize="${i}" data-key="textColor"></td>
-      <td><input type="number" min="0" step="0.01" value="${Number(p.weight)||0}" data-prize="${i}" data-key="weight"></td>
-      <td><label class="check"><input type="checkbox" ${p.enabled!==false?"checked":""} data-prize="${i}" data-key="enabled"> Aktif</label></td>
-      <td><div class="segment-actions">
-        <button class="icon-btn" data-up="${i}" ${i===0?"disabled":""}>↑</button>
-        <button class="icon-btn" data-down="${i}" ${i===config.wheel.segments.length-1?"disabled":""}>↓</button>
-        <button class="icon-btn danger" data-delete="${i}">Hapus</button>
-      </div></td>
-    </tr>
-  `).join("");
-  $("prizeTable").innerHTML = rows || `<tr><td colspan="7" class="muted">Belum ada hadiah.</td></tr>`;
-
-  document.querySelectorAll("[data-prize]").forEach(el=>{
-    el.addEventListener("change",()=>{
-      const i = Number(el.dataset.prize);
-      const key = el.dataset.key;
-      config.wheel.segments[i][key] = el.type==="checkbox" ? el.checked :
-        el.type==="number" ? Number(el.value) : el.value;
-      updateTicketPrizeOptions();
-      renderStats();
-    });
-  });
-
-  document.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>{
-    const i=Number(b.dataset.up);
-    [config.wheel.segments[i-1],config.wheel.segments[i]]=[config.wheel.segments[i],config.wheel.segments[i-1]];
-    renderPrizeTable(); updateTicketPrizeOptions();
-  });
-  document.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>{
-    const i=Number(b.dataset.down);
-    [config.wheel.segments[i+1],config.wheel.segments[i]]=[config.wheel.segments[i],config.wheel.segments[i+1]];
-    renderPrizeTable(); updateTicketPrizeOptions();
-  });
-  document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>{
-    const i=Number(b.dataset.delete);
-    if(!confirm(`Hapus hadiah "${config.wheel.segments[i].label}"?`)) return;
-    const id=config.wheel.segments[i].id;
-    config.tickets.forEach(t=>{if(t.prizeId===id)t.prizeId=""});
-    config.wheel.segments.splice(i,1);
-    renderPrizeTable(); updateTicketPrizeOptions(); renderStats();
-  });
-}
-
-function renderTicketTable(){
-  const prizes = config.wheel.segments || [];
-  const prizeName = id => prizes.find(p=>p.id===id)?.label || "Acak / tidak ditentukan";
-  const rows = (config.tickets||[]).map((t,i)=>`
-    <tr>
-      <td><b>${esc(t.code)}</b></td>
-      <td>${esc(prizeName(t.prizeId))}</td>
-      <td><span class="status ${esc(t.status)}">${esc(t.status)}</span></td>
-      <td>${formatDate(t.createdAt)}</td>
-      <td>${formatDate(t.usedAt)}</td>
-      <td>${esc(t.winner?.label || "-")}</td>
-      <td><button class="icon-btn danger" data-ticket-delete="${i}">Hapus</button></td>
-    </tr>
-  `).join("");
-  $("ticketTable").innerHTML = rows || `<tr><td colspan="7" class="muted">Belum ada tiket.</td></tr>`;
-
-  document.querySelectorAll("[data-ticket-delete]").forEach(b=>b.onclick=()=>{
-    const i=Number(b.dataset.ticketDelete);
-    if(!confirm(`Hapus tiket ${config.tickets[i].code}?`)) return;
-    config.tickets.splice(i,1);
-    renderTicketTable(); renderStats();
-  });
-}
-
-function updateTicketPrizeOptions(){
-  const select=$("newTicketPrize");
-  const current=select.value;
-  select.innerHTML=`<option value="">Acak berdasarkan weight</option>`+
-    config.wheel.segments.map(p=>`<option value="${esc(p.id)}">${esc(p.label)}</option>`).join("");
-  if(config.wheel.segments.some(p=>p.id===current)) select.value=current;
-}
-
-function addTicket(){
-  const input=$("newTicketCode");
-  const code=input.value.trim().toUpperCase();
-  if(!code){alert("Masukkan kode tiket.");return}
-  if(config.tickets.some(t=>t.code===code)){alert("Kode tiket sudah ada.");return}
-  config.tickets.unshift({
-    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-    code,
-    prizeId:$("newTicketPrize").value || "",
-    status:"active",
-    createdAt:new Date().toISOString(),
-    usedAt:null,
-    winner:null
-  });
-  input.value="";
-  $("newTicketPrize").value="";
-  renderTicketTable(); renderStats();
-}
-
-function renderLogs(){
-  if(!logs.length){
-    $("logList").innerHTML=`<div class="muted">Belum ada audit log.</div>`;
-    return;
-  }
-  $("logList").innerHTML=logs.map(l=>`
-    <div class="log">
-      <div>
-        <b>${esc(l.action||"-")}</b>
-        <div class="muted small">${esc(l.username||"system")} ${l.code?`• kode: ${esc(l.code)}`:""} ${l.prizeId?`• prize: ${esc(l.prizeId)}`:""}</div>
-      </div>
-      <div class="muted small">${formatDate(l.at)}</div>
-    </div>
-  `).join("");
-}
-
-function formatDate(v){
-  if(!v) return "-";
-  try{return new Date(v).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"})}
-  catch{return String(v)}
-}
-
-function renderAll(){
-  renderStats();
-  renderPrizeTable();
-  renderTicketTable();
-  updateTicketPrizeOptions();
-  renderLogs();
-  updatePreview();
-}
-
-document.querySelectorAll(".navbtn").forEach(btn=>{
-  btn.onclick=()=>{
-    document.querySelectorAll(".navbtn").forEach(x=>x.classList.remove("active"));
-    document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
-    btn.classList.add("active");
-    $(`section-${btn.dataset.section}`).classList.add("active");
-  };
-});
-
-$("loginForm").addEventListener("submit",login);
-$("logoutBtn").onclick=logout;
-$("reloadBtn").onclick=()=>loadAdmin();
-$("saveBtn").onclick=saveConfig;
-$("saveTopBtn").onclick=saveConfig;
-$("resetBtn").onclick=resetConfig;
-$("clearLogsBtn").onclick=clearLogs;
-$("clearLogsBtn2").onclick=clearLogs;
-$("addPrizeBtn").onclick=()=>{
-  const n=config.wheel.segments.length+1;
-  config.wheel.segments.push({
-    id:`p${Date.now()}-${n}`,
-    label:`HADIAH ${n}`,
-    color:"#ff0000",
-    textColor:"#ffffff",
-    weight:1,
-    enabled:true
-  });
-  renderPrizeTable(); updateTicketPrizeOptions(); renderStats();
+export const DEFAULT_CONFIG = {
+  site: {
+    name: "RODA KEBERUNTUNGAN",
+    title: "Lucky Wheel",
+    subtitle: "Masukkan kode tiket untuk memulai putaran.",
+    welcomeTitle: "Selamat Datang!",
+    welcomeText: "Masukkan kode tiket Anda untuk memulai putaran.",
+    logoUrl: "",
+    backgroundUrl: "",
+    primaryColor: "#e20a16",
+    secondaryColor: "#ffd700",
+    accentColor: "#ffd700",
+    footerText: "",
+    showWelcome: true
+  },
+  wheel: {
+    duration: 4,
+    spins: 10,
+    outerRadius: 185,
+    innerRadius: 75,
+    textFontSize: 18,
+    segments: [
+      { id: "p1", label: "COBA LAGI", color: "#e20a16", textColor: "#ffffff", weight: 5, enabled: true },
+      { id: "p2", label: "HADIAH KECIL", color: "#ffd700", textColor: "#000000", weight: 3, enabled: true }
+    ]
+  },
+  claim: {
+    whatsapp: "",
+    claimLabel: "Klaim Melalui WhatsApp",
+    whatsappMessage: "Halo, saya menang {PRIZE} dengan kode {CODE}",
+    instagram: "",
+    facebook: "",
+    twitter: ""
+  },
+  messages: {
+    winTitle: "SELAMAT!",
+    winText: "Anda memenangkan {PRIZE}!",
+    lossText: "",
+    invalidCode: "Kode tiket tidak valid.",
+    expiredCode: "Kode tiket sudah digunakan atau kedaluwarsa.",
+    systemError: "Terjadi kesalahan sistem, silakan coba lagi."
+  },
+  tickets: []
 };
-$("addTicketBtn").onclick=addTicket;
 
-document.querySelectorAll("[data-save]").forEach(btn=>btn.onclick=saveConfig);
+export function store() {
+  return getStore(STORE_NAME);
+}
 
-document.querySelectorAll("[data-path]").forEach(el=>{
-  el.addEventListener("input",()=>{
-    if(el.dataset.path.startsWith("site.")) updatePreview();
+export async function loadConfig() {
+  const s = store();
+  const raw = await s.get(CONFIG_KEY, { type: "json" });
+  if (!raw) {
+    await s.setJSON(CONFIG_KEY, DEFAULT_CONFIG);
+    return structuredClone(DEFAULT_CONFIG);
+  }
+  return raw;
+}
+
+export async function saveConfig(cfg) {
+  const s = store();
+  await s.setJSON(CONFIG_KEY, cfg);
+  return cfg;
+}
+
+export async function loadLogs() {
+  const s = store();
+  const raw = await s.get(LOG_KEY, { type: "json" });
+  return Array.isArray(raw) ? raw : [];
+}
+
+export async function addAudit(entry) {
+  const s = store();
+  const logs = await loadLogs();
+  logs.unshift({ at: new Date().toISOString(), ...entry });
+  const trimmed = logs.slice(0, 300);
+  await s.setJSON(LOG_KEY, trimmed);
+  return trimmed;
+}
+
+export async function clearLogs() {
+  const s = store();
+  await s.setJSON(LOG_KEY, []);
+}
+
+export function json(data, status = 200, extraHeaders = {}) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json", ...extraHeaders }
   });
-});
+}
 
-(async()=>{
-  try{
-    const data=await api(API_AUTH,{method:"GET"});
-    if(data.authenticated){
-      currentUser=data.username||"admin";
-      await openApp();
-    }
-  }catch{}
-})();
-</script>
-</body>
-</html>
+function sign(value, secret) {
+  return crypto.createHmac("sha256", secret).update(value).digest("hex");
+}
+
+export function createSessionCookie(username) {
+  const secret = process.env.ADMIN_SESSION_SECRET || "insecure-dev-secret";
+  const expires = Date.now() + SESSION_TTL_MS;
+  const payload = `${username}.${expires}`;
+  const sig = sign(payload, secret);
+  const value = Buffer.from(`${payload}.${sig}`).toString("base64url");
+  const maxAge = Math.floor(SESSION_TTL_MS / 1000);
+  return `${SESSION_COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
+}
+
+export function clearSessionCookie() {
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+}
+
+function parseCookies(header) {
+  const out = {};
+  if (!header) return out;
+  header.split(";").forEach(part => {
+    const idx = part.indexOf("=");
+    if (idx === -1) return;
+    const k = part.slice(0, idx).trim();
+    const v = part.slice(idx + 1).trim();
+    out[k] = v;
+  });
+  return out;
+}
+
+export function requireAdmin(req) {
+  const secret = process.env.ADMIN_SESSION_SECRET || "insecure-dev-secret";
+  const cookies = parseCookies(req.headers.get("cookie") || "");
+  const raw = cookies[SESSION_COOKIE];
+  if (!raw) return null;
+  let decoded;
+  try {
+    decoded = Buffer.from(raw, "base64url").toString("utf8");
+  } catch {
+    return null;
+  }
+  const parts = decoded.split(".");
+  if (parts.length !== 3) return null;
+  const [username, expiresStr, sig] = parts;
+  const expected = sign(`${username}.${expiresStr}`, secret);
+  if (sig !== expected) return null;
+  if (Date.now() > Number(expiresStr)) return null;
+  return { username };
+}
