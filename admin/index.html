@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEMONGKO RODA — LUCKY SPIN WHEEL</title>
-<link rel="icon" id="https://linklist-semesta88-amp.pages.dev/favicon.png" href="data:,">
-<meta name="description" content="Roda Keberuntungan Semongko Yang Selalu Memberikan Hadiah Yang Sangat WOW!">
+<title>Admin Panel — Lucky Wheel</title>
+<link rel="icon" id="favicon" href="data:,">
+<meta name="description" content="Admin Panel Lucky Wheel">
 <style>
 :root{
   --bg:#07090d;
@@ -843,7 +843,8 @@ document.querySelectorAll("[data-path]").forEach(el=>{
     if (r.ok) {
       const pub = await r.json();
       if (pub?.site?.name) document.title = `Admin Panel — ${pub.site.name}`;
-      if (pub?.site?.faviconUrl) $("favicon").href = pub.site.faviconUrl;
+      const favEl = document.getElementById("favicon");
+      if (pub?.site?.faviconUrl && favEl) favEl.href = pub.site.faviconUrl;
     }
   } catch {}
 })();
