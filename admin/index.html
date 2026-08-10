@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin Panel — Lucky Wheel</title>
-<meta name="description" content="Admin Panel Lucky Wheel">
+<title>SEMONGKO RODA — LUCKY SPIN WHEEL</title>
+<link rel="icon" id="https://linklist-semesta88-amp.pages.dev/favicon.png" href="data:,">
+<meta name="description" content="Roda Keberuntungan Semongko Yang Selalu Memberikan Hadiah Yang Sangat WOW!">
 <style>
 :root{
   --bg:#07090d;
@@ -291,6 +292,8 @@ td{font-size:13px}
               <div class="field"><label>Teks Welcome</label><input data-path="site.welcomeText"></div>
               <div class="field full"><label>Logo URL (di atas judul)</label><input data-path="site.logoUrl" placeholder="https://..."></div>
               <div class="field full"><label>Logo Tengah Roda (URL)</label><input data-path="site.wheelLogoUrl" placeholder="https://..."></div>
+              <div class="field"><label>Warna Latar Logo Tengah</label><div class="color-cell"><input type="color" data-path="site.wheelHubColor" data-role="picker"><input type="text" class="hex-input" data-path="site.wheelHubColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
+              <div class="field full"><label>Favicon URL (ikon tab browser)</label><input data-path="site.faviconUrl" placeholder="https://..."></div>
               <div class="field full"><label>Background URL</label><input data-path="site.backgroundUrl" placeholder="https://..."></div>
               <div class="field"><label>Warna Utama</label><div class="color-cell"><input type="color" data-path="site.primaryColor" data-role="picker"><input type="text" class="hex-input" data-path="site.primaryColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Warna Sekunder</label><div class="color-cell"><input type="color" data-path="site.secondaryColor" data-role="picker"><input type="text" class="hex-input" data-path="site.secondaryColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
@@ -833,6 +836,17 @@ document.querySelectorAll("[data-path]").forEach(el=>{
     });
   });
 });
+
+(async()=>{
+  try{
+    const r = await fetch('/api/public-config', { cache: 'no-store' });
+    if (r.ok) {
+      const pub = await r.json();
+      if (pub?.site?.name) document.title = `Admin Panel — ${pub.site.name}`;
+      if (pub?.site?.faviconUrl) $("favicon").href = pub.site.faviconUrl;
+    }
+  } catch {}
+})();
 
 (async()=>{
   try{
