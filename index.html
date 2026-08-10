@@ -130,7 +130,7 @@ function drawLabels(seg, pixelSize, outerRcss, innerRcss, fontSizeCss, dpr){
   });
 }
 
-async function load(){const r=await fetch('/api/public-config',{cache:'no-store'});if(!r.ok)throw new Error('Gagal memuat konfigurasi');applyConfig(await r.json())}
+async function load(){const r=await fetch('/api/public-config',{cache:'no-store'});if(!r.ok)throw new Error('Gagal memuat konfigurasi');applyConfig(await r.json());const urlCode=new URLSearchParams(location.search).get('code');if(urlCode)$('code').value=urlCode.trim().toUpperCase()}
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (cfg) drawWheel(); }, 150); });
 if (window.ResizeObserver) {
