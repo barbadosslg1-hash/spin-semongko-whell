@@ -1,5 +1,5 @@
 import { getStore } from "@netlify/blobs";
-   import crypto from "node:crypto";
+import crypto from "node:crypto";
 
 const STORE_NAME = "luckywheel";
 const CONFIG_KEY = "config";
@@ -19,6 +19,9 @@ export const DEFAULT_CONFIG = {
     primaryColor: "#e20a16",
     secondaryColor: "#ffd700",
     accentColor: "#ffd700",
+    wheelLogoUrl: "",
+    wheelHubColor: "#0a0a0a",
+    faviconUrl: "",
     footerText: "",
     showWelcome: true
   },
