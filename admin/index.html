@@ -722,7 +722,7 @@ function updateTicketPrizeOptions(){
   if(config.wheel.segments.some(p=>p.id===current)) select.value=current;
 }
 
-function addTicket(){
+async function addTicket(){
   const input=$("newTicketCode");
   const code=input.value.trim().toUpperCase();
   if(!code){alert("Masukkan kode tiket.");return}
@@ -736,9 +736,9 @@ function addTicket(){
     usedAt:null,
     winner:null
   });
-  input.value="";
+input.value="";
   $("newTicketPrize").value="";
-  renderTicketTable(); renderStats();
+  saveConfig();
 }
 
 function renderLogs(){
