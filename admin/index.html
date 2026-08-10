@@ -723,9 +723,12 @@ function updateTicketPrizeOptions(){
 }
 
 async function addTicket(){
-  const input=$("newTicketCode");
-  const code=input.value.trim().toUpperCase();
-  if(!code){alert("Masukkan kode tiket.");return}
+const input=$("newTicketCode");
+  let code=input.value.trim().toUpperCase();
+  if(!code){
+    do{ code="SEMESTA"+Math.random().toString(36).slice(2,8).toUpperCase(); }
+    while(config.tickets.some(t=>t.code===code));
+  }
   if(config.tickets.some(t=>t.code===code)){alert("Kode tiket sudah ada.");return}
   config.tickets.unshift({
     id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
