@@ -217,7 +217,7 @@ td{font-size:13px}
   <div class="wrap">
     <header class="topbar">
       <div class="brand">
-        <h1>Lucky Wheel — Admin</h1>
+        <h1 id="adminPanelTitle">Lucky Wheel — Admin</h1>
         <p id="welcomeAdmin">Panel pengelolaan website</p>
       </div>
       <div class="top-actions">
@@ -293,6 +293,8 @@ td{font-size:13px}
               <div class="field"><label>Warna Tombol SPIN</label><div class="color-cell"><input type="color" data-path="site.btnColor" data-role="picker"><input type="text" class="hex-input" data-path="site.btnColor" data-role="hex" maxlength="7" placeholder="#rrggbb (kosongkan = gradasi Warna Utama)"></div></div>
               <div class="field"><label>Warna Teks Tombol SPIN</label><div class="color-cell"><input type="color" data-path="site.btnTextColor" data-role="picker"><input type="text" class="hex-input" data-path="site.btnTextColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Warna Teks Catatan Bawah</label><div class="color-cell"><input type="color" data-path="site.noteColor" data-role="picker"><input type="text" class="hex-input" data-path="site.noteColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
+              <div class="field full"><label>Judul Panel Admin (bagian atas panel ini)</label><input data-path="site.adminPanelTitle" placeholder="Lucky Wheel — Admin"></div>
+              <div class="field"><label>Warna Judul Panel Admin</label><div class="color-cell"><input type="color" data-path="site.adminPanelTitleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.adminPanelTitleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Judul Browser</label><input data-path="site.title"></div>
               <div class="field full"><label>Subtitle</label><input data-path="site.subtitle"></div>
               <div class="field"><label>Warna Subtitle</label><div class="color-cell"><input type="color" data-path="site.subtitleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.subtitleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
@@ -497,6 +499,14 @@ function fillForm(){
     else el.value = value ?? "";
   });
   updatePreview();
+  applyAdminPanelTheme();
+}
+
+function applyAdminPanelTheme(){
+  const titleEl = $("adminPanelTitle");
+  if(!titleEl) return;
+  titleEl.textContent = config?.site?.adminPanelTitle || "Lucky Wheel — Admin";
+  titleEl.style.color = config?.site?.adminPanelTitleColor || "";
 }
 
 function updatePreview(){
