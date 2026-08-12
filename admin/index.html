@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SEMONGKO — LUCKY SPIN WHEEL</title>
+<title>Admin Panel — Lucky Wheel</title>
 <link rel="icon" id="favicon" href="/favicon.svg">
-<meta name="description" content="VALIDASI RODA KEBERUNTUNGAN SEMESTA88">
+<meta name="description" content="Admin Panel Lucky Wheel">
 <style>
 :root{
   --bg:#07090d;
@@ -29,7 +29,7 @@ body{
   background:
     radial-gradient(circle at 10% 0%,rgba(226,10,22,.12),transparent 28%),
     radial-gradient(circle at 90% 10%,rgba(255,215,0,.08),transparent 25%),
-    var(--bg);
+    var(--admin-bg-override,var(--bg));
   color:var(--text);
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
 }
@@ -295,6 +295,7 @@ td{font-size:13px}
               <div class="field"><label>Warna Teks Catatan Bawah</label><div class="color-cell"><input type="color" data-path="site.noteColor" data-role="picker"><input type="text" class="hex-input" data-path="site.noteColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field full"><label>Judul Panel Admin (bagian atas panel ini)</label><input data-path="site.adminPanelTitle" placeholder="Lucky Wheel — Admin"></div>
               <div class="field"><label>Warna Judul Panel Admin</label><div class="color-cell"><input type="color" data-path="site.adminPanelTitleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.adminPanelTitleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
+              <div class="field"><label>Warna Background Panel Admin</label><div class="color-cell"><input type="color" data-path="site.adminPanelBgColor" data-role="picker"><input type="text" class="hex-input" data-path="site.adminPanelBgColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Judul Browser</label><input data-path="site.title"></div>
               <div class="field full"><label>Subtitle</label><input data-path="site.subtitle"></div>
               <div class="field"><label>Warna Subtitle</label><div class="color-cell"><input type="color" data-path="site.subtitleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.subtitleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
@@ -507,6 +508,7 @@ function applyAdminPanelTheme(){
   if(!titleEl) return;
   titleEl.textContent = config?.site?.adminPanelTitle || "Lucky Wheel — Admin";
   titleEl.style.color = config?.site?.adminPanelTitleColor || "";
+  document.documentElement.style.setProperty('--admin-bg-override', config?.site?.adminPanelBgColor || '');
 }
 
 function updatePreview(){
