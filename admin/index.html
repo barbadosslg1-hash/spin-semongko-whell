@@ -292,10 +292,18 @@ td{font-size:13px}
               <div class="field"><label>Warna Teks Input</label><div class="color-cell"><input type="color" data-path="site.inputTextColor" data-role="picker"><input type="text" class="hex-input" data-path="site.inputTextColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Warna Tombol SPIN</label><div class="color-cell"><input type="color" data-path="site.btnColor" data-role="picker"><input type="text" class="hex-input" data-path="site.btnColor" data-role="hex" maxlength="7" placeholder="#rrggbb (kosongkan = gradasi Warna Utama)"></div></div>
               <div class="field"><label>Warna Teks Tombol SPIN</label><div class="color-cell"><input type="color" data-path="site.btnTextColor" data-role="picker"><input type="text" class="hex-input" data-path="site.btnTextColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
+              <div class="field"><label>Variasi Shadow Bawah (Input & Tombol)</label><select data-path="site.shadowVariant">
+                <option value="none">Tidak ada</option>
+                <option value="soft">Halus</option>
+                <option value="strong">Tegas (default)</option>
+                <option value="glow">Glow Warna</option>
+                <option value="neon">Neon Terang</option>
+              </select></div>
               <div class="field"><label>Warna Teks Catatan Bawah</label><div class="color-cell"><input type="color" data-path="site.noteColor" data-role="picker"><input type="text" class="hex-input" data-path="site.noteColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field full"><label>Judul Panel Admin (bagian atas panel ini)</label><input data-path="site.adminPanelTitle" placeholder="Lucky Wheel — Admin"></div>
               <div class="field"><label>Warna Judul Panel Admin</label><div class="color-cell"><input type="color" data-path="site.adminPanelTitleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.adminPanelTitleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Warna Background Panel Admin</label><div class="color-cell"><input type="color" data-path="site.adminPanelBgColor" data-role="picker"><input type="text" class="hex-input" data-path="site.adminPanelBgColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
+              <div class="field full"><label>Gambar Background Panel Admin (URL, opsional)</label><input data-path="site.adminPanelBgImage" placeholder="https://... (kosongkan untuk pakai warna solid di atas)"></div>
               <div class="field"><label>Judul Browser</label><input data-path="site.title"></div>
               <div class="field full"><label>Subtitle</label><input data-path="site.subtitle"></div>
               <div class="field"><label>Warna Subtitle</label><div class="color-cell"><input type="color" data-path="site.subtitleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.subtitleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
@@ -508,7 +516,13 @@ function applyAdminPanelTheme(){
   if(!titleEl) return;
   titleEl.textContent = config?.site?.adminPanelTitle || "Lucky Wheel — Admin";
   titleEl.style.color = config?.site?.adminPanelTitleColor || "";
-  document.documentElement.style.setProperty('--admin-bg-override', config?.site?.adminPanelBgColor || '');
+  const img = config?.site?.adminPanelBgImage || '';
+  const color = config?.site?.adminPanelBgColor || '';
+  if(img){
+    document.documentElement.style.setProperty('--admin-bg-override', `url(${CSS.escape(img)}) center/cover fixed`);
+  }else{
+    document.documentElement.style.setProperty('--admin-bg-override', color || '');
+  }
 }
 
 function updatePreview(){
