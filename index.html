@@ -297,7 +297,10 @@ function drawLabels(seg, pixelSize, outerRcss, innerRcss, fontSizeCss, dpr){
   seg.forEach((s, i) => {
     // 0 derajat Winwheel = arah jam 12 (atas), searah jarum jam — sama
     // seperti posisi juring warna yang sudah tergambar oleh Winwheel.
-    const midAngleDeg = angleStep * i + angleStep / 2;
+    // Ditambah wheel.rotationAngle supaya teks ikut berputar bareng
+    // juring warnanya selama animasi (bukan diam di posisi awal).
+    const currentRotation = wheel ? (wheel.rotationAngle || 0) : 0;
+    const midAngleDeg = angleStep * i + angleStep / 2 + currentRotation;
     const canvasAngleRad = (midAngleDeg - 90) * Math.PI / 180;
 
     ctx.save();
