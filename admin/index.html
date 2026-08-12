@@ -286,8 +286,10 @@ td{font-size:13px}
             </div>
             <div class="form-grid">
               <div class="field"><label>Nama Website</label><input data-path="site.name"></div>
+              <div class="field"><label>Warna Nama Website</label><div class="color-cell"><input type="color" data-path="site.titleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.titleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Judul Browser</label><input data-path="site.title"></div>
               <div class="field full"><label>Subtitle</label><input data-path="site.subtitle"></div>
+              <div class="field"><label>Warna Subtitle</label><div class="color-cell"><input type="color" data-path="site.subtitleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.subtitleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Judul Welcome</label><input data-path="site.welcomeTitle"></div>
               <div class="field"><label>Teks Welcome</label><input data-path="site.welcomeText"></div>
               <div class="field full"><label>Logo URL (di atas judul)</label><input data-path="site.logoUrl" placeholder="https://..."></div>
@@ -297,6 +299,8 @@ td{font-size:13px}
               <div class="field full"><label>Gambar Kotak Wheel (URL, opsional)</label><input data-path="site.cardBgImage" placeholder="https://... (kosongkan untuk pakai warna solid)"></div>
               <div class="field"><label>Warna Pointer</label><div class="color-cell"><input type="color" data-path="site.pointerColor" data-role="picker"><input type="text" class="hex-input" data-path="site.pointerColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field full"><label>Gambar Pointer (URL, opsional)</label><input data-path="site.pointerImageUrl" placeholder="https://... (kosongkan untuk pakai bentuk segitiga default)"></div>
+              <div class="field"><label>Lebar Pointer (px)</label><input type="number" min="10" max="200" data-path="site.pointerWidth" placeholder="40"></div>
+              <div class="field"><label>Tinggi Pointer (px)</label><input type="number" min="10" max="200" data-path="site.pointerHeight" placeholder="46"></div>
               <div class="field full"><label>Favicon URL (ikon tab browser)</label><input data-path="site.faviconUrl" placeholder="https://..."></div>
               <div class="field full"><label>Wheel Background (Mobile)</label><input data-path="site.backgroundUrl" placeholder="https://..."></div>
               <div class="field full"><label>Wheel Background (Desktop)</label><input data-path="site.backgroundUrlDesktop" placeholder="https://... (opsional, khusus layar desktop ≥800px, kosongkan untuk pakai Background URL biasa)"></div>
@@ -304,6 +308,7 @@ td{font-size:13px}
               <div class="field"><label>Warna Sekunder</label><div class="color-cell"><input type="color" data-path="site.secondaryColor" data-role="picker"><input type="text" class="hex-input" data-path="site.secondaryColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Warna Aksen</label><div class="color-cell"><input type="color" data-path="site.accentColor" data-role="picker"><input type="text" class="hex-input" data-path="site.accentColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Footer</label><input data-path="site.footerText"></div>
+              <div class="field"><label>Warna Footer</label><div class="color-cell"><input type="color" data-path="site.footerColor" data-role="picker"><input type="text" class="hex-input" data-path="site.footerColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <label class="check"><input type="checkbox" data-path="site.showWelcome"> Tampilkan welcome popup</label>
             </div>
           </div>
