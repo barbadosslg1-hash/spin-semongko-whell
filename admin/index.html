@@ -26,10 +26,14 @@ html{scroll-behavior:smooth}
 body{
   margin:0;
   min-height:100vh;
-  background:
+  background-color:var(--admin-bg-color,var(--bg));
+  background-image:
     radial-gradient(circle at 10% 0%,rgba(226,10,22,.12),transparent 28%),
     radial-gradient(circle at 90% 10%,rgba(255,215,0,.08),transparent 25%),
-    var(--admin-bg-override,var(--bg));
+    var(--admin-bg-image,none);
+  background-size:cover;
+  background-position:center;
+  background-attachment:fixed;
   color:var(--text);
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
 }
@@ -307,7 +311,7 @@ td{font-size:13px}
               <div class="field full"><label>Judul Panel Admin (bagian atas panel ini)</label><input data-path="site.adminPanelTitle" placeholder="Lucky Wheel — Admin"></div>
               <div class="field"><label>Warna Judul Panel Admin</label><div class="color-cell"><input type="color" data-path="site.adminPanelTitleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.adminPanelTitleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Warna Background Panel Admin</label><div class="color-cell"><input type="color" data-path="site.adminPanelBgColor" data-role="picker"><input type="text" class="hex-input" data-path="site.adminPanelBgColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
-              <div class="field full"><label>Gambar Background Panel Admin (URL, opsional)</label><input data-path="site.adminPanelBgImage" placeholder="https://... (kosongkan untuk pakai warna solid di atas)"></div>
+              <div class="field full"><label>Gambar Background Panel Admin (URL gambar statis saja — bukan video)</label><input data-path="site.adminPanelBgImage" placeholder="https://...jpg atau .png/.webp (kosongkan untuk pakai warna solid di atas). Link .mp4/video TIDAK didukung di sini."></div>
               <div class="field"><label>Judul Browser</label><input data-path="site.title"></div>
               <div class="field full"><label>Subtitle</label><input data-path="site.subtitle"></div>
               <div class="field"><label>Warna Subtitle</label><div class="color-cell"><input type="color" data-path="site.subtitleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.subtitleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
@@ -522,11 +526,13 @@ function applyAdminPanelTheme(){
   titleEl.style.color = config?.site?.adminPanelTitleColor || "";
   const img = config?.site?.adminPanelBgImage || '';
   const color = config?.site?.adminPanelBgColor || '';
-  if(img){
-    document.documentElement.style.setProperty('--admin-bg-override', `url(${CSS.escape(img)}) center/cover fixed`);
-  }else{
-    document.documentElement.style.setProperty('--admin-bg-override', color || '');
-  }
+  const root = document.documentElement.style;
+  root.setProperty('--admin-bg-color', color || '');
+  // Field ini hanya mendukung gambar statis (jpg/png/webp/gif/svg), BUKAN
+  // video (mp4/webm/mov) — CSS background-image tidak bisa merender video.
+  // Kalau URL-nya video, diabaikan (bukan bikin seluruh background rusak).
+  const isStaticImage = img && !/\.(mp4|webm|mov)(\?|#|$)/i.test(img);
+  root.setProperty('--admin-bg-image', isStaticImage ? `url(${CSS.escape(img)})` : 'none');
 }
 
 function updatePreview(){
