@@ -12,6 +12,7 @@
 </head>
 <body>
 <video id="bgVideo" autoplay muted loop playsinline style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;display:none"></video>
+<canvas id="bgEffects" style="position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
 <div class="overlay"><div class="wrap">
 <header class="brand"><img id="logo" class="hidden"><h1 id="siteTitle">RODA KEBERUNTUNGAN</h1><p id="subtitle">Masukkan kode tiket untuk memulai putaran.</p></header>
 <main class="card wheel-area"><section class="wheel-box" id="wheelBox"><div class="pointer" id="pointer"></div><canvas id="wheel" width="520" height="520"></canvas><div class="hub-logo" id="hubLogo"></div></section><section class="control"><h2>Masukkan Kode Tiket</h2><input id="code" placeholder="Masukkan Kode" autocomplete="off"><button class="btn" id="spinBtn">SPIN</button><div class="result" id="result"></div><p class="note">Setiap kode aktif hanya dapat digunakan satu kali.</p></section></main>
@@ -145,4 +146,82 @@ $('spinBtn').onclick=async()=>{if(spinning)return;const code=$('code').value.tri
 function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 load().catch(e=>{document.querySelector('.control').insertAdjacentHTML('beforeend','<p style="color:#ff7777">'+escapeHtml(e.message)+'</p>')});
 </script>
+<script>
+(function(){
+  const canvas = document.getElementById('bgEffects');
+  const ctx = canvas.getContext('2d');
+  let stars = [], shooting = [];
+
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function makeStars(count){
+    stars = [];
+    for(let i=0;i<count;i++){
+      stars.push({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height,
+        r: Math.random()*1.5+0.5,
+        phase: Math.random()*Math.PI*2,
+        speed: Math.random()*0.02+0.01
+      });
+    }
+  }
+  makeStars(120);
+
+  function maybeSpawnShootingStar(){
+    if(Math.random() < 0.005){
+      shooting.push({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height*0.4,
+        len: Math.random()*80+60,
+        speed: Math.random()*8+6,
+        angle: Math.PI/4,
+        life: 1
+      });
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    stars.forEach(s=>{
+      s.phase += s.speed;
+      const twinkle = (Math.sin(s.phase)+1)/2;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,255,255,${0.2+twinkle*0.6})`;
+      ctx.fill();
+    });
+
+    maybeSpawnShootingStar();
+    shooting.forEach(s=>{
+      const dx = Math.cos(s.angle)*s.len;
+      const dy = Math.sin(s.angle)*s.len;
+      const grad = ctx.createLinearGradient(s.x, s.y, s.x-dx, s.y-dy);
+      grad.addColorStop(0, `rgba(255,255,255,${s.life})`);
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(s.x-dx, s.y-dy);
+      ctx.stroke();
+
+      s.x += dx*0.15;
+      s.y += dy*0.15;
+      s.life -= 0.02;
+    });
+    shooting = shooting.filter(s => s.life > 0);
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
 </body></html>
+  
