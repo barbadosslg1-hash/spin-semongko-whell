@@ -267,7 +267,15 @@ hub.style.backgroundRepeat = 'no-repeat';
     outerRadius: outerRcss * dpr,
     innerRadius: innerRcss * dpr,
     segments: seg.map(s => ({ fillStyle: s.color, text: '' })),
-    animation: { type: 'spinToStop', duration: Number(cfg.wheel.duration) || 4, spins: Number(cfg.wheel.spins) || 10 }
+    animation: {
+      type: 'spinToStop',
+      duration: Number(cfg.wheel.duration) || 4,
+      spins: Number(cfg.wheel.spins) || 10,
+      // Winwheel menggambar ulang canvas di SETIAP frame animasi (buat
+      // rotasi), yang otomatis menimpa teks label yang digambar manual
+      // di bawah — jadi teksnya perlu digambar ulang di tiap frame juga.
+      callbackAfter: () => drawLabels(seg, pixelSize, outerRcss, innerRcss, fontSizeCss, dpr)
+    }
   });
 
   drawLabels(seg, pixelSize, outerRcss, innerRcss, fontSizeCss, dpr);
