@@ -21,7 +21,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenMax.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/zarocknz/javascript-winwheel@2.8.0/Winwheel.min.js"></script>
 <script>
-let cfg, wheel, spinning=false, lastLabelParams=null;
+let cfg, wheel, spinning=false, lastLabelParams=null, wheelImageLoadToken=0;
 const $=id=>document.getElementById(id);
 function applyConfig(c){cfg=c; document.documentElement.style.setProperty('--red',c.site.primaryColor);document.documentElement.style.setProperty('--gold',c.site.secondaryColor);$('siteTitle').textContent=c.site.name;$('subtitle').textContent=c.site.subtitle;$('footer').textContent=c.site.footerText||'';document.title=c.site.title||c.site.name;const favEl=document.getElementById('favicon');if(c.site.faviconUrl&&favEl)favEl.href=c.site.faviconUrl;applyBackground();applyPointer();applyCardBg();applyTextColors();applyBodyBgColor();applyControlColors();applyResultColors();if(c.site.logoUrl){$('logo').src=c.site.logoUrl;$('logo').classList.remove('hidden')}else $('logo').classList.add('hidden');$('welcomeTitle').textContent=c.site.welcomeTitle;$('welcomeText').textContent=c.site.welcomeText;if(c.site.showWelcome!==false&&!sessionStorage.getItem('sw_welcome'))$('welcome').classList.remove('hide');else $('welcome').classList.add('hide');drawWheel();}
 
@@ -172,13 +172,24 @@ function drawCustomImageWheel(seg, imageUrl){
 
   $('pointer').style.top = cssMargin + 'px';
 
+  // Kalau drawWheel() dipanggil ulang (misal karena resize) sebelum
+  // gambar sebelumnya selesai loading, versi lama harus DIBATALKAN —
+  // kalau tidak, dia akan menggambar ke canvas yang sudah berubah
+  // ukuran dengan skala/pusat yang salah (inilah penyebab bentuk
+  // "meledak ke sudut" yang muncul di desktop).
+  wheelImageLoadToken += 1;
+  const myToken = wheelImageLoadToken;
+
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = () => {
+    if (myToken !== wheelImageLoadToken) return; // sudah digantikan draw yang lebih baru, abaikan
+    const liveCanvas = document.getElementById('wheel');
+    const liveCenter = liveCanvas.width / 2; // selalu pakai ukuran canvas AKTUAL saat ini, bukan closure lama
     wheel = new Winwheel({
       canvasId: 'wheel',
-      centerX: pixelSize / 2,
-      centerY: pixelSize / 2,
+      centerX: liveCenter,
+      centerY: liveCenter,
       drawMode: 'image',
       wheelImage: img,
       numSegments: seg.length,
