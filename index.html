@@ -22,7 +22,7 @@
 <script>
 let cfg, wheel, spinning=false;
 const $=id=>document.getElementById(id);
-function applyConfig(c){cfg=c; document.documentElement.style.setProperty('--red',c.site.primaryColor);document.documentElement.style.setProperty('--gold',c.site.secondaryColor);$('siteTitle').textContent=c.site.name;$('subtitle').textContent=c.site.subtitle;$('footer').textContent=c.site.footerText||'';document.title=c.site.title||c.site.name;const favEl=document.getElementById('favicon');if(c.site.faviconUrl&&favEl)favEl.href=c.site.faviconUrl;applyBackground();applyPointer();applyCardBg();if(c.site.logoUrl){$('logo').src=c.site.logoUrl;$('logo').classList.remove('hidden')}else $('logo').classList.add('hidden');$('welcomeTitle').textContent=c.site.welcomeTitle;$('welcomeText').textContent=c.site.welcomeText;if(c.site.showWelcome!==false&&!sessionStorage.getItem('sw_welcome'))$('welcome').classList.remove('hide');else $('welcome').classList.add('hide');drawWheel();}
+function applyConfig(c){cfg=c; document.documentElement.style.setProperty('--red',c.site.primaryColor);document.documentElement.style.setProperty('--gold',c.site.secondaryColor);$('siteTitle').textContent=c.site.name;$('subtitle').textContent=c.site.subtitle;$('footer').textContent=c.site.footerText||'';document.title=c.site.title||c.site.name;const favEl=document.getElementById('favicon');if(c.site.faviconUrl&&favEl)favEl.href=c.site.faviconUrl;applyBackground();applyPointer();applyCardBg();applyTextColors();if(c.site.logoUrl){$('logo').src=c.site.logoUrl;$('logo').classList.remove('hidden')}else $('logo').classList.add('hidden');$('welcomeTitle').textContent=c.site.welcomeTitle;$('welcomeText').textContent=c.site.welcomeText;if(c.site.showWelcome!==false&&!sessionStorage.getItem('sw_welcome'))$('welcome').classList.remove('hide');else $('welcome').classList.add('hide');drawWheel();}
 
 function applyBackground(){
   if(!cfg || !cfg.site) return;
@@ -55,10 +55,23 @@ function applyPointer(){
   if(cfg.site.pointerImageUrl){
     pointerEl.classList.add('pointer-img');
     pointerEl.style.backgroundImage = `url(${CSS.escape(cfg.site.pointerImageUrl)})`;
+    const w = Number(cfg.site.pointerWidth) || 40;
+    const h = Number(cfg.site.pointerHeight) || 46;
+    pointerEl.style.width = w + 'px';
+    pointerEl.style.height = h + 'px';
   }else{
     pointerEl.classList.remove('pointer-img');
     pointerEl.style.backgroundImage = 'none';
+    pointerEl.style.width = '';
+    pointerEl.style.height = '';
   }
+}
+
+function applyTextColors(){
+  if(!cfg || !cfg.site) return;
+  $('siteTitle').style.color = cfg.site.titleColor || '';
+  $('subtitle').style.color = cfg.site.subtitleColor || '';
+  $('footer').style.color = cfg.site.footerColor || '';
 }
 
 function applyCardBg(){
