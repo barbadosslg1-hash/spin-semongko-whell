@@ -81,19 +81,67 @@ function applyCardBg(){
   document.documentElement.style.setProperty('--card-bg', img ? `url(${CSS.escape(img)}) center/cover` : color);
 }
 
+function getWheelCssSize(){
+  const wheelBox = document.getElementById('wheelBox');
+  const containerSize = Math.round(wheelBox.clientWidth || 400);
+  const maxSize = Number(cfg.wheel.maxSize) || 0;
+  const capped = maxSize > 0 ? Math.min(containerSize, maxSize) : containerSize;
+  return Math.max(180, capped);
+}
+
+function drawCustomImageWheel(seg, imageUrl){
+  $('hubLogo').style.display = 'none'; // gambar custom sudah termasuk lubang tengah, hub logo bawaan disembunyikan
+
+  const cssSize = getWheelCssSize();
+  const cssMargin = Math.max(18, Math.round(cssSize * 0.075));
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const pixelSize = Math.round(cssSize * dpr);
+
+  const canvas = document.getElementById('wheel');
+  canvas.width = pixelSize;
+  canvas.height = pixelSize;
+  canvas.style.width = cssSize + 'px';
+
+  $('pointer').style.top = cssMargin + 'px';
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    wheel = new Winwheel({
+      canvasId: 'wheel',
+      centerX: pixelSize / 2,
+      centerY: pixelSize / 2,
+      drawMode: 'image',
+      wheelImage: img,
+      numSegments: seg.length,
+      segments: seg.map(() => ({})),
+      animation: { type: 'spinToStop', duration: Number(cfg.wheel.duration) || 4, spins: Number(cfg.wheel.spins) || 10 }
+    });
+    wheel.draw();
+  };
+  img.src = imageUrl;
+}
+
 function drawWheel(){
   const seg = cfg.wheel.segments.filter(s => s.enabled !== false);
   if (!seg.length) return;
 
+  const customImg = cfg.site.customWheelImage;
+  if(customImg){
+    drawCustomImageWheel(seg, customImg);
+    return;
+  }
+  $('hubLogo').style.display = '';
+
   // Pengaturan admin (Outer/Inner Radius) hanya dipakai untuk RASIO
   // lubang tengah terhadap roda, bukan ukuran piksel langsung — ukuran
-  // akhir di layar selalu menyesuaikan lebar kotak roda yang tersedia.
+  // akhir di layar selalu menyesuaikan lebar kotak roda yang tersedia
+  // (dibatasi oleh "Ukuran Wheel Maksimal" kalau diisi).
   const cfgOuter = Math.max(60, Number(cfg.wheel.outerRadius) || 220);
   const cfgInner = Math.max(0, Number(cfg.wheel.innerRadius) || 60);
   const innerFraction = Math.min(0.85, cfgInner / cfgOuter);
 
-  const wheelBox = document.getElementById('wheelBox');
-  const cssSize = Math.max(240, Math.round(wheelBox.clientWidth || 400));
+  const cssSize = getWheelCssSize();
   const cssMargin = Math.max(18, Math.round(cssSize * 0.075));
   const outerRcss = (cssSize / 2) - cssMargin;
   const innerRcss = outerRcss * innerFraction;
