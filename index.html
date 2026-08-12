@@ -334,7 +334,16 @@ function drawLabels(seg, pixelSize, outerRcss, innerRcss, fontSizeCss, dpr){
   });
 }
 
-async function load(){const r=await fetch('/api/public-config',{cache:'no-store'});if(!r.ok)throw new Error('Gagal memuat konfigurasi');applyConfig(await r.json());const urlCode=new URLSearchParams(location.search).get('code');if(urlCode)$('code').value=urlCode.trim().toUpperCase()}
+async function load(){const r=await fetch('/api/public-config',{cache:'no-store'});if(!r.ok)throw new Error('Gagal memuat konfigurasi');
+// Tunggu 2x requestAnimationFrame supaya browser benar-benar SELESAI
+// menghitung layout CSS grid (.wheel-area, 2 kolom di desktop) sebelum
+// wheelBox.clientWidth dibaca. Tanpa ini, di desktop pengukuran lebar
+// kadang masih memakai nilai sementara sebelum grid final, sehingga
+// gambar wheel custom digambar dengan skala yang salah (tampak
+// "meledak" ke sudut) — mobile/tablet jarang kena karena grid-nya
+// cuma 1 kolom dan lebih cepat stabil.
+await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+applyConfig(await r.json());const urlCode=new URLSearchParams(location.search).get('code');if(urlCode)$('code').value=urlCode.trim().toUpperCase()}
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (cfg) { drawWheel(); applyBackground(); applyBodyBgColor(); } }, 150); });
 if (window.ResizeObserver) {
@@ -356,6 +365,10 @@ redrawLabels();
 wheel.animation.stopAngle=wheel.getRandomForSegment(activeIdx+1);wheel.animation.callbackFinished=()=>{redrawLabels();const msg=(cfg.messages.winText||'Anda memenangkan {PRIZE}!').replaceAll('{PRIZE}',d.prize.label);$('result').innerHTML='<b>'+escapeHtml(cfg.messages.winTitle||'SELAMAT!')+'</b><br>'+escapeHtml(msg)+'<br><small>Kode: '+escapeHtml(d.code)+'</small>';if(cfg.claim.whatsapp){const text=(cfg.claim.whatsappMessage||'').replaceAll('{CODE}',d.code).replaceAll('{PRIZE}',d.prize.label);$('result').innerHTML+='<br><a style="color:#ffd700" target="_blank" href="https://wa.me/'+encodeURIComponent(cfg.claim.whatsapp)+'?text='+encodeURIComponent(text)+'">'+escapeHtml(cfg.claim.claimLabel||'Klaim Melalui WhatsApp')+'</a>'}$('result').classList.add('show');spinning=false;$('spinBtn').disabled=false;$('code').value=''};wheel.startAnimation();}catch(e){alert(e.message);spinning=false;$('spinBtn').disabled=false}};
 function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 load().catch(e=>{document.querySelector('.control').insertAdjacentHTML('beforeend','<p style="color:#ff7777">'+escapeHtml(e.message)+'</p>')});
+// Jaring pengaman tambahan: redraw sekali lagi setelah layout benar-benar
+// "settle" (font, video, dsb selesai load) — supaya wheel-nya self-correct
+// kalau ternyata masih ada reflow telat yang tidak tertangkap ResizeObserver.
+setTimeout(()=>{ if(cfg) drawWheel(); }, 600);
 </script>
 <script>
 (function(){
