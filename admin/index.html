@@ -301,6 +301,9 @@ td{font-size:13px}
                 <option value="rim">Rim Emas (garis tepi)</option>
               </select></div>
               <div class="field"><label>Warna Teks Catatan Bawah</label><div class="color-cell"><input type="color" data-path="site.noteColor" data-role="picker"><input type="text" class="hex-input" data-path="site.noteColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
+              <div class="field"><label>Warna Latar Kotak "SELAMAT!"</label><div class="color-cell"><input type="color" data-path="site.resultBgColor" data-role="picker"><input type="text" class="hex-input" data-path="site.resultBgColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
+              <div class="field"><label>Warna Border Kotak "SELAMAT!"</label><div class="color-cell"><input type="color" data-path="site.resultBorderColor" data-role="picker"><input type="text" class="hex-input" data-path="site.resultBorderColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
+              <div class="field"><label>Warna Teks Kotak "SELAMAT!"</label><div class="color-cell"><input type="color" data-path="site.resultTextColor" data-role="picker"><input type="text" class="hex-input" data-path="site.resultTextColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field full"><label>Judul Panel Admin (bagian atas panel ini)</label><input data-path="site.adminPanelTitle" placeholder="Lucky Wheel — Admin"></div>
               <div class="field"><label>Warna Judul Panel Admin</label><div class="color-cell"><input type="color" data-path="site.adminPanelTitleColor" data-role="picker"><input type="text" class="hex-input" data-path="site.adminPanelTitleColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
               <div class="field"><label>Warna Background Panel Admin</label><div class="color-cell"><input type="color" data-path="site.adminPanelBgColor" data-role="picker"><input type="text" class="hex-input" data-path="site.adminPanelBgColor" data-role="hex" maxlength="7" placeholder="#rrggbb"></div></div>
@@ -669,6 +672,7 @@ function renderPrizeTable(){
       <td><div class="segment-actions">
         <button class="icon-btn" data-up="${i}" ${i===0?"disabled":""}>↑</button>
         <button class="icon-btn" data-down="${i}" ${i===config.wheel.segments.length-1?"disabled":""}>↓</button>
+        <button class="icon-btn" data-gen-ticket="${p.id}" title="Buat tiket otomatis untuk hadiah ini">🎟 Tiket</button>
         <button class="icon-btn danger" data-delete="${i}">Hapus</button>
       </div></td>
     </tr>
@@ -737,6 +741,27 @@ function renderPrizeTable(){
     config.wheel.segments.splice(i,1);
     renderPrizeTable(); updateTicketPrizeOptions(); renderStats();
   });
+
+  document.querySelectorAll("[data-gen-ticket]").forEach(b=>b.onclick=()=>{
+    const prizeId = b.dataset.genTicket;
+    generateTicketForPrize(prizeId);
+  });
+}
+
+function generateTicketForPrize(prizeId){
+  let code;
+  do{ code="SEMESTA"+Math.random().toString(36).slice(2,8).toUpperCase(); }
+  while(config.tickets.some(t=>t.code===code));
+  config.tickets.unshift({
+    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    code,
+    prizeId,
+    status:"active",
+    createdAt:new Date().toISOString(),
+    usedAt:null,
+    winner:null
+  });
+  saveConfig();
 }
 
 function renderTicketTable(){
