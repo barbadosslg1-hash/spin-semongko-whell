@@ -354,7 +354,15 @@ function drawLabels(seg, pixelSize, outerRcss, innerRcss, fontSizeCss, dpr){
   });
 }
 
-async function load(){const r=await fetch('/api/public-config',{cache:'no-store'});if(!r.ok)throw new Error('Gagal memuat konfigurasi');
+async function load(){
+// Terapkan config terakhir yang tersimpan di browser TERLEBIH DAHULU
+// (kalau ada), supaya background/wheel langsung tampil tanpa nunggu
+// request API + KV selesai. Ini menghilangkan "flash" layar polos
+// saat refresh. Config asli tetap di-fetch ulang setelahnya untuk
+// menyinkronkan kalau ada perubahan dari admin panel.
+const cached = localStorage.getItem('sw_cfg');
+if(cached){ try{ applyConfig(JSON.parse(cached)); }catch(e){} }
+const r=await fetch('/api/public-config',{cache:'no-store'});if(!r.ok)throw new Error('Gagal memuat konfigurasi');
 // Tunggu 2x requestAnimationFrame supaya browser benar-benar SELESAI
 // menghitung layout CSS grid (.wheel-area, 2 kolom di desktop) sebelum
 // wheelBox.clientWidth dibaca. Tanpa ini, di desktop pengukuran lebar
@@ -363,7 +371,9 @@ async function load(){const r=await fetch('/api/public-config',{cache:'no-store'
 // "meledak" ke sudut) — mobile/tablet jarang kena karena grid-nya
 // cuma 1 kolom dan lebih cepat stabil.
 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-applyConfig(await r.json());const urlCode=new URLSearchParams(location.search).get('code');if(urlCode)$('code').value=urlCode.trim().toUpperCase()}
+const data = await r.json();
+localStorage.setItem('sw_cfg', JSON.stringify(data));
+applyConfig(data);const urlCode=new URLSearchParams(location.search).get('code');if(urlCode)$('code').value=urlCode.trim().toUpperCase()}
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (cfg) { drawWheel(); applyBackground(); applyBodyBgColor(); } }, 150); });
 if (window.ResizeObserver) {
