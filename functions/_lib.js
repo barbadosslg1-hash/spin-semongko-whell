@@ -143,9 +143,9 @@ async function hmacHex(value, secret) {
   return [...new Uint8Array(sigBuf)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-export async function createSessionCookie(username, secret) {
+export async function createSessionCookie(username, secret, role = "admin") {
   const expires = Date.now() + SESSION_TTL_MS;
-  const payload = `${username}.${expires}`;
+  const payload = `${username}.${role}.${expires}`;
   const sig = await hmacHex(payload, secret);
   const value = encodeURIComponent(`${payload}.${sig}`);
   const maxAge = Math.floor(SESSION_TTL_MS / 1000);
@@ -174,10 +174,22 @@ export async function requireAdmin(request, secret) {
   let decoded;
   try { decoded = decodeURIComponent(raw); } catch { return null; }
   const parts = decoded.split(".");
-  if (parts.length !== 3) return null;
-  const [username, expiresStr, sig] = parts;
-  const expected = await hmacHex(`${username}.${expiresStr}`, secret);
-  if (sig !== expected) return null;
-  if (Date.now() > Number(expiresStr)) return null;
-  return { username };
+  // Cookie lama (sebelum fitur role) cuma punya 3 bagian: username.expires.sig.
+  // Cookie baru punya 4: username.role.expires.sig. Dua-duanya didukung supaya
+  // sesi yang sedang login saat deploy tidak langsung ke-logout paksa.
+  if (parts.length === 3) {
+    const [username, expiresStr, sig] = parts;
+    const expected = await hmacHex(`${username}.${expiresStr}`, secret);
+    if (sig !== expected) return null;
+    if (Date.now() > Number(expiresStr)) return null;
+    return { username, role: "admin" };
+  }
+  if (parts.length === 4) {
+    const [username, role, expiresStr, sig] = parts;
+    const expected = await hmacHex(`${username}.${role}.${expiresStr}`, secret);
+    if (sig !== expected) return null;
+    if (Date.now() > Number(expiresStr)) return null;
+    return { username, role };
+  }
+  return null;
 }
