@@ -185,13 +185,33 @@ function drawCustomImageWheel(seg, imageUrl){
   img.onload = () => {
     if (myToken !== wheelImageLoadToken) return; // sudah digantikan draw yang lebih baru, abaikan
     const liveCanvas = document.getElementById('wheel');
-    const liveCenter = liveCanvas.width / 2; // selalu pakai ukuran canvas AKTUAL saat ini, bukan closure lama
+    const size = liveCanvas.width; // ukuran drawing-buffer AKTUAL (sudah termasuk dpr)
+
+    // PENTING: Winwheel.js menggambar wheelImage di UKURAN ASLI PIXEL
+    // file gambarnya (natural width/height), BUKAN di-scale otomatis
+    // mengikuti ukuran canvas. Di HP dengan devicePixelRatio tinggi
+    // (2-3x) kebetulan ukuran canvas mendekati ukuran asli gambar
+    // sehingga terlihat benar — tapi di desktop (dpr biasanya 1x)
+    // canvas jauh lebih kecil dari gambar aslinya, sehingga gambar
+    // digambar jauh lebih besar dari canvas dan yang terlihat cuma
+    // bagian tengahnya yang ter-zoom (itulah bentuk "meledak ke
+    // sudut" yang muncul di desktop).
+    // Fix: gambar dulu ke <canvas> tersembunyi persis seukuran
+    // drawing-buffer target, lalu serahkan CANVAS itu (bukan <img>
+    // mentah) ke Winwheel — sehingga "ukuran asli"-nya otomatis sudah
+    // sama dengan ukuran canvas asli, di ukuran layar & dpr manapun.
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = size;
+    offCanvas.height = size;
+    offCanvas.getContext('2d').drawImage(img, 0, 0, size, size);
+
+    const liveCenter = size / 2; // selalu pakai ukuran canvas AKTUAL saat ini, bukan closure lama
     wheel = new Winwheel({
       canvasId: 'wheel',
       centerX: liveCenter,
       centerY: liveCenter,
       drawMode: 'image',
-      wheelImage: img,
+      wheelImage: offCanvas,
       numSegments: seg.length,
       segments: seg.map(() => ({})),
       animation: { type: 'spinToStop', duration: Number(cfg.wheel.duration) || 4, spins: Number(cfg.wheel.spins) || 10 }
