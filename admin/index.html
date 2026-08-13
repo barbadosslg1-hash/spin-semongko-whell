@@ -238,6 +238,7 @@ td{font-size:13px}
         <button class="navbtn" data-section="claim">Klaim</button>
         <button class="navbtn" data-section="messages">Pesan</button>
         <button class="navbtn" data-section="tickets">Kode Tiket</button>
+        <button class="navbtn" data-section="admins">Kelola Admin</button>
         <button class="navbtn" data-section="logs">Audit Log</button>
       </aside>
 
@@ -437,10 +438,35 @@ td{font-size:13px}
           </div>
         </section>
 
+        <section id="section-admins" class="section">
+          <div class="card">
+            <div class="card-head">
+              <div><h2>Kelola Admin</h2><div class="muted">Akun tambahan yang bisa login ke panel ini, di luar akun superadmin.</div></div>
+            </div>
+            <div class="notice">
+              <b>Catatan:</b> Akun superadmin (<span id="superadminName">-</span>) diatur lewat Cloudflare Environment
+              Variables dan tidak bisa dihapus dari sini. Password akun tambahan disimpan ter-enkripsi (hash), bukan teks polos.
+            </div>
+
+            <div class="ticket-tools">
+              <input id="newAdminUser" placeholder="Username admin baru">
+              <input id="newAdminPass" type="password" placeholder="Password (minimal 6 karakter)">
+              <button class="btn primary" id="addAdminBtn">+ Tambah Admin</button>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Username</th><th>Dibuat</th><th>Dibuat Oleh</th><th>Aksi</th></tr></thead>
+                <tbody id="adminTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <section id="section-logs" class="section">
           <div class="card">
             <div class="card-head">
-              <div><h2>Audit Log</h2><div class="muted">Aktivitas login, simpan konfigurasi dan spin.</div></div>
+              <div><h2>Audit Log</h2><div class="muted">Aktivitas login, logout, simpan konfigurasi, tiket, dan spin.</div></div>
               <button class="btn danger" id="clearLogsBtn2">🗑 Hapus Log</button>
             </div>
             <div id="logList"></div>
@@ -457,10 +483,13 @@ td{font-size:13px}
 const $ = id => document.getElementById(id);
 const API_AUTH = "/api/admin-auth";
 const API_ADMIN = "/api/admin-api";
+const API_USERS = "/api/admin-users";
 
 let config = null;
 let logs = [];
 let currentUser = "";
+let admins = [];
+let superadminUsername = "";
 
 function esc(value){
   return String(value ?? "").replace(/[&<>"']/g, c => ({
@@ -589,11 +618,69 @@ async function loadAdmin(){
     normalizeClient();
     fillForm();
     renderAll();
+    await loadAdmins();
   }catch(err){
     $("appView").classList.add("hidden");
     $("loginView").classList.remove("hidden");
     $("loginMsg").textContent = err.message;
   }
+}
+
+async function loadAdmins(){
+  try{
+    const data = await api(API_USERS,{method:"GET"});
+    admins = Array.isArray(data.admins) ? data.admins : [];
+    superadminUsername = data.superadminUsername || "";
+    renderAdmins();
+  }catch(err){
+    // Non-fatal — jangan blok seluruh panel kalau ini gagal dimuat.
+  }
+}
+
+function renderAdmins(){
+  const nameEl = $("superadminName");
+  if(nameEl) nameEl.textContent = superadminUsername || "-";
+
+  const rows = admins.map(a=>`
+    <tr>
+      <td><b>${esc(a.username)}</b></td>
+      <td>${formatDate(a.createdAt)}</td>
+      <td>${esc(a.createdBy||"-")}</td>
+      <td><button class="icon-btn danger" data-admin-delete="${esc(a.username)}">Hapus</button></td>
+    </tr>
+  `).join("");
+  $("adminTable").innerHTML = rows || `<tr><td colspan="4" class="muted">Belum ada admin tambahan.</td></tr>`;
+
+  document.querySelectorAll("[data-admin-delete]").forEach(b=>b.onclick=async()=>{
+    const username = b.dataset.adminDelete;
+    if(!confirm(`Hapus akun admin "${username}"?`)) return;
+    try{
+      const data = await api(API_USERS,{
+        method:"POST",
+        body:JSON.stringify({action:"delete",username})
+      });
+      admins = data.admins || [];
+      renderAdmins();
+      flash("Akun admin berhasil dihapus.");
+    }catch(err){ flash(err.message,"error"); }
+  });
+}
+
+async function addAdmin(){
+  const username = $("newAdminUser").value.trim();
+  const password = $("newAdminPass").value;
+  if(!username || !password){ flash("Username dan password wajib diisi.","error"); return; }
+  try{
+    const data = await api(API_USERS,{
+      method:"POST",
+      body:JSON.stringify({action:"add",username,password})
+    });
+    admins = data.admins || [];
+    $("newAdminUser").value = "";
+    $("newAdminPass").value = "";
+    renderAdmins();
+    flash("Akun admin berhasil ditambahkan.");
+  }catch(err){ flash(err.message,"error"); }
 }
 
 async function saveConfig(){
@@ -833,7 +920,7 @@ function renderLogs(){
     <div class="log">
       <div>
         <b>${esc(l.action||"-")}</b>
-        <div class="muted small">${esc(l.username||"system")} ${l.code?`• kode: ${esc(l.code)}`:""} ${l.prizeId?`• prize: ${esc(l.prizeId)}`:""}</div>
+        <div class="muted small">${esc(l.username||"system")} ${l.code?`• kode: ${esc(l.code)}`:""} ${l.prizeId?`• prize: ${esc(l.prizeId)}`:""} ${l.target?`• target: ${esc(l.target)}`:""}</div>
       </div>
       <div class="muted small">${formatDate(l.at)}</div>
     </div>
@@ -885,6 +972,7 @@ $("addPrizeBtn").onclick=()=>{
   renderPrizeTable(); updateTicketPrizeOptions(); renderStats();
 };
 $("addTicketBtn").onclick=addTicket;
+$("addAdminBtn").onclick=addAdmin;
 
 document.querySelectorAll("[data-save]").forEach(btn=>btn.onclick=saveConfig);
 
