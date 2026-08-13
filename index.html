@@ -25,21 +25,22 @@
 let cfg, wheel, spinning=false, lastLabelParams=null, wheelImageLoadToken=0;
 let lastIsDesktop=null;
 const $=id=>document.getElementById(id);
-function applyConfig(c){cfg=c; document.documentElement.style.setProperty('--red',c.site.primaryColor);document.documentElement.style.setProperty('--gold',c.site.secondaryColor);$('siteTitle').textContent=c.site.name;$('subtitle').textContent=c.site.subtitle;$('footer').textContent=c.site.footerText||'';document.title=c.site.title||c.site.name;const favEl=document.getElementById('favicon');if(c.site.faviconUrl&&favEl)favEl.href=c.site.faviconUrl;applyBackground();applyPointer();applyCardBg();applyTextColors();applyBodyBgColor();applyControlColors();applyResultColors();if(c.site.logoUrl){$('logo').src=c.site.logoUrl;$('logo').classList.remove('hidden')}else $('logo').classList.add('hidden');$('welcomeTitle').textContent=c.site.welcomeTitle;$('welcomeText').textContent=c.site.welcomeText;if(c.site.showWelcome!==false&&!sessionStorage.getItem('sw_welcome'))$('welcome').classList.remove('hide');else $('welcome').classList.add('hide');drawWheel();}
+function applyConfig(c, preliminary){cfg=c; document.documentElement.style.setProperty('--red',c.site.primaryColor);document.documentElement.style.setProperty('--gold',c.site.secondaryColor);$('siteTitle').textContent=c.site.name;$('subtitle').textContent=c.site.subtitle;$('footer').textContent=c.site.footerText||'';document.title=c.site.title||c.site.name;const favEl=document.getElementById('favicon');if(c.site.faviconUrl&&favEl)favEl.href=c.site.faviconUrl;applyBackground(preliminary);applyPointer();applyCardBg();applyTextColors();applyBodyBgColor();applyControlColors();applyResultColors();if(c.site.logoUrl){$('logo').src=c.site.logoUrl;$('logo').classList.remove('hidden')}else $('logo').classList.add('hidden');$('welcomeTitle').textContent=c.site.welcomeTitle;$('welcomeText').textContent=c.site.welcomeText;if(c.site.showWelcome!==false&&!sessionStorage.getItem('sw_welcome'))$('welcome').classList.remove('hide');else $('welcome').classList.add('hide');drawWheel();}
 
-function applyBackground(){
+function applyBackground(preliminary){
   if(!cfg || !cfg.site) return;
   const isDesktop = window.matchMedia('(min-width:800px)').matches;
   lastIsDesktop = isDesktop;
   const url = (isDesktop && cfg.site.backgroundUrlDesktop) ? cfg.site.backgroundUrlDesktop : (cfg.site.backgroundUrl || '');
   const bgVideo = document.getElementById('bgVideo');
+  const isVideo=/\.(mp4|webm|mov)$/i.test(url);
+  if(preliminary && isVideo) return; // biarkan poster tampil, tunggu config asli sebelum menyentuh video sama sekali
   if(!url){
     bgVideo.style.display='none';bgVideo.removeAttribute('src');bgVideo.classList.remove('ready');
     document.body.style.backgroundImage='none';
     document.querySelector('.overlay').style.background='';
     return;
   }
-  const isVideo=/\.(mp4|webm|mov)$/i.test(url);
   if(isVideo){
     if(bgVideo.getAttribute('src')!==url){
       bgVideo.classList.remove('ready');
@@ -364,7 +365,7 @@ async function load(){
 // saat refresh. Config asli tetap di-fetch ulang setelahnya untuk
 // menyinkronkan kalau ada perubahan dari admin panel.
 const cached = localStorage.getItem('sw_cfg');
-if(cached){ try{ applyConfig(JSON.parse(cached)); }catch(e){} }
+if(cached){ try{ applyConfig(JSON.parse(cached), true); }catch(e){} }
 const r=await fetch('/api/public-config',{cache:'no-store'});if(!r.ok)throw new Error('Gagal memuat konfigurasi');
 // Tunggu 2x requestAnimationFrame supaya browser benar-benar SELESAI
 // menghitung layout CSS grid (.wheel-area, 2 kolom di desktop) sebelum
@@ -376,7 +377,7 @@ const r=await fetch('/api/public-config',{cache:'no-store'});if(!r.ok)throw new 
 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 const data = await r.json();
 localStorage.setItem('sw_cfg', JSON.stringify(data));
-applyConfig(data);const urlCode=new URLSearchParams(location.search).get('code');if(urlCode)$('code').value=urlCode.trim().toUpperCase()}
+applyConfig(data, false);const urlCode=new URLSearchParams(location.search).get('code');if(urlCode)$('code').value=urlCode.trim().toUpperCase()}
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (cfg) { drawWheel(); const nowDesktop = window.matchMedia('(min-width:800px)').matches; if (nowDesktop !== lastIsDesktop) applyBackground(); applyBodyBgColor(); } }, 150); });
 if (window.ResizeObserver) {
