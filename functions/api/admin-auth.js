@@ -1,4 +1,4 @@
-import { addAudit, createSessionCookie, clearSessionCookie, json, requireAdmin, loadAdmins, verifyPassword } from "../_lib.js";
+import { addAudit, createSessionCookie, clearSessionCookie, json, requireAdmin, loadAdmins, verifyPassword, isIpWhitelisted, getClientIp } from "../_lib.js";
 
 export async function onRequestGet({ request, env }) {
   const session = await requireAdmin(request, env.ADMIN_SESSION_SECRET);
@@ -40,6 +40,19 @@ export async function onRequestPost({ request, env }) {
     }
 
     const role = isSuperadmin ? "owner" : (matchedAdmin.role || "admin");
+
+    // Whitelist IP HANYA berlaku untuk akun tambahan (admin/manager), bukan
+    // superadmin — supaya superadmin selalu punya jalan masuk untuk
+    // memperbaiki whitelist kalau ada salah konfigurasi.
+    if (role !== "owner") {
+      const ip = getClientIp(request);
+      const allowed = await isIpWhitelisted(env.LUCKYWHEEL_KV, ip);
+      if (!allowed) {
+        await addAudit(env.LUCKYWHEEL_KV, { action: "login_blocked_ip", username, ip });
+        return json({ error: `Login ditolak: alamat IP kamu (${ip}) belum ada di Whitelist IP. Hubungi superadmin untuk menambahkannya.` }, 403);
+      }
+    }
+
     await addAudit(env.LUCKYWHEEL_KV, { action: "login", username });
     return json(
       { ok: true, username, role },
