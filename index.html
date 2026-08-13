@@ -396,7 +396,43 @@ wheel.stopAnimation(false);
 wheel.rotationAngle = 0;
 wheel.draw();
 redrawLabels();
-wheel.animation.stopAngle=wheel.getRandomForSegment(activeIdx+1);wheel.animation.callbackFinished=()=>{redrawLabels();const msg=(cfg.messages.winText||'Anda memenangkan {PRIZE}!').replaceAll('{PRIZE}',d.prize.label);$('result').innerHTML='<b>'+escapeHtml(cfg.messages.winTitle||'SELAMAT!')+'</b><br>'+escapeHtml(msg)+'<br><small>Kode: '+escapeHtml(d.code)+'</small>';if(cfg.claim.whatsapp){const text=(cfg.claim.whatsappMessage||'').replaceAll('{CODE}',d.code).replaceAll('{PRIZE}',d.prize.label);$('result').innerHTML+='<br><a style="color:#ffd700" target="_blank" href="https://wa.me/'+encodeURIComponent(cfg.claim.whatsapp)+'?text='+encodeURIComponent(text)+'">'+escapeHtml(cfg.claim.claimLabel||'Klaim Melalui WhatsApp')+'</a>'}$('result').classList.add('show');spinning=false;$('spinBtn').disabled=false;$('code').value=''};wheel.startAnimation();}catch(e){alert(e.message);spinning=false;$('spinBtn').disabled=false}};
+wheel.animation.stopAngle=wheel.getRandomForSegment(activeIdx+1);
+// Tampilan hasil, link klaim, dan aktifkan-ulang tombol SPIN dibungkus di
+// finishSpin() dan dijaga flag `spinDone` supaya cuma jalan SEKALI —
+// dipanggil dari callbackFinished (jalur normal) ATAU dari timeout di
+// bawah (jalur cadangan). Ini untuk kasus tab browser customer di-
+// background/di-throttle pas animasi jalan (server sudah sukses proses
+// spin duluan, tapi callback animasi Winwheel/TweenMax bisa macet kalau
+// tab tidak aktif) — tanpa ini customer bisa kelihatan "tidak dapat apa-
+// apa" padahal tiketnya sudah kepakai di server.
+let spinDone=false;
+const finishSpin=()=>{
+  if(spinDone)return;
+  spinDone=true;
+  redrawLabels();
+  const msg=(cfg.messages.winText||'Anda memenangkan {PRIZE}!').replaceAll('{PRIZE}',d.prize.label);
+  $('result').innerHTML='<b>'+escapeHtml(cfg.messages.winTitle||'SELAMAT!')+'</b><br>'+escapeHtml(msg)+'<br><small>Kode: '+escapeHtml(d.code)+'</small>';
+  if(cfg.claim.whatsapp){const text=(cfg.claim.whatsappMessage||'').replaceAll('{CODE}',d.code).replaceAll('{PRIZE}',d.prize.label);$('result').innerHTML+='<br><a style="color:#ffd700" target="_blank" href="https://wa.me/'+encodeURIComponent(cfg.claim.whatsapp)+'?text='+encodeURIComponent(text)+'">'+escapeHtml(cfg.claim.claimLabel||'Klaim Melalui WhatsApp')+'</a>'}
+  $('result').classList.add('show');
+  spinning=false;
+  $('spinBtn').disabled=false;
+  $('code').value='';
+};
+wheel.animation.callbackFinished=finishSpin;
+wheel.startAnimation();
+// Jalur cadangan: durasi animasi + jeda toleransi. Kalau callbackFinished
+// belum sempat jalan sampai batas ini (tab sempat background/di-throttle),
+// paksa tampilkan hasilnya supaya customer tidak melihat layar "diam".
+const safetyMs=((Number(cfg.wheel.duration)||4)*1000)+3000;
+setTimeout(finishSpin,safetyMs);
+// Kalau customer balik ke tab ini sebelum timeout di atas kelar (misal
+// tadi sempat pindah app), langsung selesaikan saat itu juga daripada
+// bikin mereka nunggu sisa timeout — hasil sudah pasti ada karena request
+// ke server sudah selesai duluan sebelum animasi ini dimulai.
+document.addEventListener('visibilitychange',function onVis(){
+  if(document.visibilityState==='visible'){finishSpin();document.removeEventListener('visibilitychange',onVis)}
+});
+}catch(e){alert(e.message);spinning=false;$('spinBtn').disabled=false}};
 function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 load().catch(e=>{document.querySelector('.control').insertAdjacentHTML('beforeend','<p style="color:#ff7777">'+escapeHtml(e.message)+'</p>')});
 // Jaring pengaman tambahan: redraw sekali lagi setelah layout benar-benar
