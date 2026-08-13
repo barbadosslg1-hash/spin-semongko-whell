@@ -1,4 +1,4 @@
-import { addAudit, createSessionCookie, clearSessionCookie, json, requireAdmin } from "../_lib.js";
+import { addAudit, createSessionCookie, clearSessionCookie, json, requireAdmin, loadAdmins, verifyPassword } from "../_lib.js";
 
 export async function onRequestGet({ request, env }) {
   const session = await requireAdmin(request, env.ADMIN_SESSION_SECRET);
@@ -19,7 +19,22 @@ export async function onRequestPost({ request, env }) {
     if (!validUser || !validPass) {
       return json({ error: "ADMIN_USERNAME/ADMIN_PASSWORD belum diset di Cloudflare Environment Variables." }, 500);
     }
-    if (username !== validUser || password !== validPass) {
+
+    // 1) Superadmin bootstrap dari Cloudflare Environment Variables (akun lama).
+    const isSuperadmin = username === validUser && password === validPass;
+
+    // 2) Akun admin tambahan yang dibuat lewat panel, disimpan di KV dengan
+    //    password sudah di-hash (PBKDF2) — tidak pernah disimpan plain text.
+    let matchedAdmin = null;
+    if (!isSuperadmin) {
+      const admins = await loadAdmins(env.LUCKYWHEEL_KV);
+      const found = admins.find(a => a.username === username);
+      if (found && await verifyPassword(password, found.salt, found.hash)) {
+        matchedAdmin = found;
+      }
+    }
+
+    if (!isSuperadmin && !matchedAdmin) {
       await addAudit(env.LUCKYWHEEL_KV, { action: "login_failed", username });
       return json({ error: "Unauthorized" }, 401);
     }
