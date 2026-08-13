@@ -239,6 +239,7 @@ td{font-size:13px}
         <button class="navbtn" data-section="messages">Pesan</button>
         <button class="navbtn" data-section="tickets">Kode Tiket</button>
         <button class="navbtn" data-section="admins">Kelola Admin</button>
+        <button class="navbtn" data-section="ipwhitelist">Whitelist IP</button>
         <button class="navbtn" data-section="logs">Audit Log</button>
       </aside>
 
@@ -496,6 +497,42 @@ td{font-size:13px}
           </div>
         </section>
 
+        <section id="section-ipwhitelist" class="section">
+          <div class="card">
+            <div class="card-head">
+              <div><h2>Whitelist IP</h2><div class="muted">Batasi login akun admin/manager tambahan hanya dari alamat IP tertentu.</div></div>
+            </div>
+            <div class="notice">
+              <b>Catatan:</b> Whitelist ini <b>HANYA berlaku untuk akun admin/manager tambahan</b> (yang dibuat lewat
+              "Kelola Admin"). Akun superadmin (<span id="superadminNameIp">-</span>) selalu bisa login dari mana saja,
+              supaya tetap ada jalan masuk kalau whitelist salah konfigurasi.
+              <br><br>
+              <b>Penting:</b> kalau daftar ini kosong, SEMUA akun admin/manager tambahan tidak akan bisa login dari IP
+              manapun sampai ada IP yang ditambahkan di sini. IP publik bisa berubah (ganti WiFi/paket data) — kalau
+              itu terjadi, akun tersangkut perlu ditambahkan ulang IP barunya oleh superadmin/manager.
+              IP kamu saat ini: <b id="yourCurrentIp">-</b>
+            </div>
+
+            <div id="ipNoPermission" class="notice hidden" style="background:#3a171c;border-color:#71232c;color:#ffb2b8">
+              Akun kamu sekarang login sebagai <b>Admin biasa</b> — cuma <b>Manager</b> atau superadmin yang bisa mengelola Whitelist IP. Kamu tetap bisa lihat daftarnya di bawah.
+            </div>
+
+            <div class="ticket-tools" id="ipAddForm">
+              <input id="newIpAddress" placeholder="Alamat IP, contoh: 103.10.20.30">
+              <input id="newIpLabel" placeholder="Label (opsional, misal: WiFi Kantor)">
+              <button class="btn" id="addMyIpBtn">+ Tambah IP Saya Sekarang</button>
+              <button class="btn primary" id="addIpBtn">+ Tambah IP</button>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Alamat IP</th><th>Label</th><th>Ditambahkan</th><th>Oleh</th><th>Aksi</th></tr></thead>
+                <tbody id="ipTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <section id="section-logs" class="section">
           <div class="card">
             <div class="card-head">
@@ -517,6 +554,7 @@ const $ = id => document.getElementById(id);
 const API_AUTH = "/api/admin-auth";
 const API_ADMIN = "/api/admin-api";
 const API_USERS = "/api/admin-users";
+const API_IPWHITELIST = "/api/admin-ipwhitelist";
 
 let config = null;
 let logs = [];
@@ -524,6 +562,8 @@ let currentUser = "";
 let admins = [];
 let superadminUsername = "";
 let canManageAdmins = false;
+let ipWhitelist = [];
+let yourCurrentIp = "";
 
 function esc(value){
   return String(value ?? "").replace(/[&<>"']/g, c => ({
@@ -653,6 +693,7 @@ async function loadAdmin(){
     fillForm();
     renderAll();
     await loadAdmins();
+    await loadIpWhitelistData();
   }catch(err){
     $("appView").classList.add("hidden");
     $("loginView").classList.remove("hidden");
@@ -747,6 +788,70 @@ async function addAdmin(){
     $("newAdminRole").value = "admin";
     renderAdmins();
     flash("Akun admin berhasil ditambahkan.");
+  }catch(err){ flash(err.message,"error"); }
+}
+
+async function loadIpWhitelistData(){
+  try{
+    const data = await api(API_IPWHITELIST,{method:"GET"});
+    ipWhitelist = Array.isArray(data.whitelist) ? data.whitelist : [];
+    yourCurrentIp = data.yourIp || "";
+    canManageAdmins = canManageAdmins || Boolean(data.canManage);
+    renderIpWhitelist();
+  }catch(err){
+    // Non-fatal — jangan blok seluruh panel kalau ini gagal dimuat.
+  }
+}
+
+function renderIpWhitelist(){
+  const nameEl = $("superadminNameIp");
+  if(nameEl) nameEl.textContent = superadminUsername || "-";
+  const ipEl = $("yourCurrentIp");
+  if(ipEl) ipEl.textContent = yourCurrentIp || "-";
+
+  const canManageIp = canManageAdmins;
+  $("ipNoPermission").classList.toggle("hidden", canManageIp);
+  $("ipAddForm").classList.toggle("hidden", !canManageIp);
+
+  const rows = ipWhitelist.map(e=>`
+    <tr>
+      <td><b>${esc(e.ip)}</b></td>
+      <td>${esc(e.label||"-")}</td>
+      <td>${formatDate(e.addedAt)}</td>
+      <td>${esc(e.addedBy||"-")}</td>
+      <td>${canManageIp ? `<button class="icon-btn danger" data-ip-delete="${esc(e.ip)}">Hapus</button>` : ""}</td>
+    </tr>
+  `).join("");
+  $("ipTable").innerHTML = rows || `<tr><td colspan="5" class="muted">Belum ada IP di whitelist — akun admin/manager tambahan tidak akan bisa login sampai ada IP yang ditambahkan.</td></tr>`;
+
+  document.querySelectorAll("[data-ip-delete]").forEach(b=>b.onclick=async()=>{
+    const ip = b.dataset.ipDelete;
+    if(!confirm(`Hapus IP "${ip}" dari whitelist?`)) return;
+    try{
+      const data = await api(API_IPWHITELIST,{
+        method:"POST",
+        body:JSON.stringify({action:"delete",ip})
+      });
+      ipWhitelist = data.whitelist || [];
+      renderIpWhitelist();
+      flash("IP berhasil dihapus dari whitelist.");
+    }catch(err){ flash(err.message,"error"); }
+  });
+}
+
+async function addIpToWhitelist(ip, label){
+  ip = (ip||"").trim();
+  if(!ip){ flash("Alamat IP wajib diisi.","error"); return; }
+  try{
+    const data = await api(API_IPWHITELIST,{
+      method:"POST",
+      body:JSON.stringify({action:"add",ip,label:(label||"").trim()})
+    });
+    ipWhitelist = data.whitelist || [];
+    $("newIpAddress").value = "";
+    $("newIpLabel").value = "";
+    renderIpWhitelist();
+    flash("IP berhasil ditambahkan ke whitelist.");
   }catch(err){ flash(err.message,"error"); }
 }
 
@@ -1078,7 +1183,7 @@ function renderLogs(){
     <div class="log">
       <div>
         <b>${esc(l.action||"-")}</b>
-        <div class="muted small">${esc(l.username||"system")} ${l.code?`• kode: ${esc(l.code)}`:""} ${l.prizeId?`• prize: ${esc(l.prizeId)}`:""} ${l.target?`• target: ${esc(l.target)}`:""}</div>
+        <div class="muted small">${esc(l.username||"system")} ${l.code?`• kode: ${esc(l.code)}`:""} ${l.prizeId?`• prize: ${esc(l.prizeId)}`:""} ${l.target?`• target: ${esc(l.target)}`:""} ${l.ip?`• ip: ${esc(l.ip)}`:""}</div>
       </div>
       <div class="muted small">${formatDate(l.at)}</div>
     </div>
@@ -1131,6 +1236,8 @@ $("addPrizeBtn").onclick=()=>{
 };
 $("addTicketBtn").onclick=addTicket;
 $("addAdminBtn").onclick=addAdmin;
+$("addIpBtn").onclick=()=>addIpToWhitelist($("newIpAddress").value, $("newIpLabel").value);
+$("addMyIpBtn").onclick=()=>addIpToWhitelist(yourCurrentIp, "IP saat ini");
 $("exportBackupBtn").onclick=exportBackup;
 $("importBackupBtn").onclick=()=>$("importBackupFile").click();
 $("importBackupFile").addEventListener("change",()=>{
