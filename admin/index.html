@@ -429,9 +429,19 @@ td{font-size:13px}
               <button class="btn primary" id="addTicketBtn">+ Tambah Tiket</button>
             </div>
 
+            <div class="ticket-tools">
+              <select id="ticketStatusFilter">
+                <option value="all">Semua Status</option>
+                <option value="active">Belum Diputar</option>
+                <option value="used">Sudah Diputar</option>
+              </select>
+              <input id="ticketSearch" placeholder="Cari kode tiket...">
+              <span class="muted small" id="ticketCount" style="align-self:center"></span>
+            </div>
+
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Kode</th><th>Hadiah Tetap</th><th>Status</th><th>Dibuat</th><th>Digunakan</th><th>Pemenang</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>Kode</th><th>Hadiah Tetap</th><th data-sort="status" style="cursor:pointer">Status ⇅</th><th data-sort="createdAt" style="cursor:pointer">Dibuat ⇅</th><th data-sort="usedAt" style="cursor:pointer">Digunakan ⇅</th><th>Pemenang</th><th>Aksi</th></tr></thead>
                 <tbody id="ticketTable"></tbody>
               </table>
             </div>
@@ -857,10 +867,36 @@ function generateTicketForPrize(prizeId){
   saveConfig();
 }
 
+let ticketFilterState = { status: "all", search: "", sortKey: null, sortDir: 1 };
+
 function renderTicketTable(){
   const prizes = config.wheel.segments || [];
   const prizeName = id => prizes.find(p=>p.id===id)?.label || "Acak / tidak ditentukan";
-  const rows = (config.tickets||[]).map((t,i)=>`
+
+  let list = (config.tickets||[]).map((t,i)=>({...t, __i:i}));
+
+  if(ticketFilterState.status !== "all"){
+    list = list.filter(t => t.status === ticketFilterState.status);
+  }
+  if(ticketFilterState.search){
+    const q = ticketFilterState.search.toLowerCase();
+    list = list.filter(t => (t.code||"").toLowerCase().includes(q));
+  }
+  if(ticketFilterState.sortKey){
+    const key = ticketFilterState.sortKey;
+    const dir = ticketFilterState.sortDir;
+    list = list.slice().sort((a,b)=>{
+      const av = a[key] || "";
+      const bv = b[key] || "";
+      if(av < bv) return -1*dir;
+      if(av > bv) return 1*dir;
+      return 0;
+    });
+  }
+
+  $("ticketCount").textContent = `Menampilkan ${list.length} dari ${(config.tickets||[]).length} tiket`;
+
+  const rows = list.map(t=>`
     <tr>
       <td><b>${esc(t.code)}</b></td>
       <td>${esc(prizeName(t.prizeId))}</td>
@@ -868,18 +904,30 @@ function renderTicketTable(){
       <td>${formatDate(t.createdAt)}</td>
       <td>${formatDate(t.usedAt)}</td>
       <td>${esc(t.winner?.label || "-")}</td>
-      <td><button class="icon-btn danger" data-ticket-delete="${i}">Hapus</button></td>
+      <td><button class="icon-btn danger" data-ticket-delete="${t.__i}">Hapus</button></td>
     </tr>
   `).join("");
-  $("ticketTable").innerHTML = rows || `<tr><td colspan="7" class="muted">Belum ada tiket.</td></tr>`;
+  $("ticketTable").innerHTML = rows || `<tr><td colspan="7" class="muted">Tidak ada tiket yang cocok dengan filter.</td></tr>`;
 
   document.querySelectorAll("[data-ticket-delete]").forEach(b=>b.onclick=()=>{
     const i=Number(b.dataset.ticketDelete);
     if(!confirm(`Hapus tiket ${config.tickets[i].code}?`)) return;
     config.tickets.splice(i,1);
     renderTicketTable(); renderStats();
+    saveConfig();
   });
 }
+
+$("ticketStatusFilter").onchange = ()=>{ ticketFilterState.status = $("ticketStatusFilter").value; renderTicketTable(); };
+$("ticketSearch").addEventListener("input", ()=>{ ticketFilterState.search = $("ticketSearch").value.trim(); renderTicketTable(); });
+document.querySelectorAll("[data-sort]").forEach(th=>{
+  th.onclick = ()=>{
+    const key = th.dataset.sort;
+    if(ticketFilterState.sortKey === key) ticketFilterState.sortDir *= -1;
+    else { ticketFilterState.sortKey = key; ticketFilterState.sortDir = 1; }
+    renderTicketTable();
+  };
+});
 
 function updateTicketPrizeOptions(){
   const select=$("newTicketPrize");
