@@ -1,7 +1,9 @@
 const KV_CONFIG_KEY = "config";
 const KV_LOG_KEY = "logs";
+const KV_ADMINS_KEY = "admins";
 const SESSION_COOKIE = "sw_admin";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 jam
+const PBKDF2_ITERATIONS = 100000;
 
 export const DEFAULT_CONFIG = {
   site: {
@@ -80,6 +82,47 @@ export async function addAudit(kv, entry) {
 
 export async function clearLogs(kv) {
   await kv.put(KV_LOG_KEY, JSON.stringify([]));
+}
+
+export async function loadAdmins(kv) {
+  const raw = await kv.get(KV_ADMINS_KEY, { type: "json" });
+  return Array.isArray(raw) ? raw : [];
+}
+
+export async function saveAdmins(kv, admins) {
+  await kv.put(KV_ADMINS_KEY, JSON.stringify(admins));
+  return admins;
+}
+
+function bytesToHex(bytes) {
+  return [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return bytes;
+}
+
+// Password akun admin tambahan disimpan sebagai hash PBKDF2 (bukan plain
+// text) di KV, terpisah dari ADMIN_USERNAME/ADMIN_PASSWORD (superadmin
+// bootstrap dari Cloudflare Environment Variables).
+export async function hashPassword(password, saltHex) {
+  const enc = new TextEncoder();
+  const salt = saltHex ? hexToBytes(saltHex) : crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    keyMaterial,
+    256
+  );
+  return { hash: bytesToHex(new Uint8Array(bits)), salt: bytesToHex(salt) };
+}
+
+export async function verifyPassword(password, saltHex, expectedHashHex) {
+  if (!saltHex || !expectedHashHex) return false;
+  const { hash } = await hashPassword(password, saltHex);
+  return hash === expectedHashHex;
 }
 
 export function json(data, status = 200, extraHeaders = {}) {
