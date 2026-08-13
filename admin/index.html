@@ -281,6 +281,19 @@ td{font-size:13px}
               Perubahan disimpan melalui Admin API ke Netlify Blobs dan akan dibaca oleh website publik.
             </p>
           </div>
+
+          <div class="card">
+            <h3>Backup Konfigurasi</h3>
+            <div class="muted small" style="margin-bottom:12px">
+              Simpan salinan semua pengaturan + daftar tiket ke file JSON di komputer kamu, atau pulihkan dari file backup sebelumnya.
+              Berguna sebelum melakukan perubahan besar atau kalau tidak sengaja klik "Reset ke Default".
+            </div>
+            <div class="top-actions">
+              <button class="btn" id="exportBackupBtn">⬇ Export Backup (JSON)</button>
+              <button class="btn" id="importBackupBtn">⬆ Import Backup</button>
+              <input type="file" id="importBackupFile" accept="application/json" class="hidden">
+            </div>
+          </div>
         </section>
 
         <section id="section-site" class="section">
@@ -456,17 +469,27 @@ td{font-size:13px}
             <div class="notice">
               <b>Catatan:</b> Akun superadmin (<span id="superadminName">-</span>) diatur lewat Cloudflare Environment
               Variables dan tidak bisa dihapus dari sini. Password akun tambahan disimpan ter-enkripsi (hash), bukan teks polos.
+              <br><b>Role:</b> <b>Manager</b> boleh menambah/menghapus akun admin lain (sama seperti superadmin). <b>Admin biasa</b>
+              bisa kelola website/tiket/dsb tapi tidak bisa menyentuh akun admin lain.
             </div>
 
-            <div class="ticket-tools">
+            <div id="adminNoPermission" class="notice hidden" style="background:#3a171c;border-color:#71232c;color:#ffb2b8">
+              Akun kamu sekarang login sebagai <b>Admin biasa</b> — cuma <b>Manager</b> atau superadmin yang bisa menambah/menghapus/ubah role akun admin. Kamu tetap bisa lihat daftarnya di bawah.
+            </div>
+
+            <div class="ticket-tools" id="adminAddForm">
               <input id="newAdminUser" placeholder="Username admin baru">
               <input id="newAdminPass" type="password" placeholder="Password (minimal 6 karakter)">
+              <select id="newAdminRole">
+                <option value="admin">Admin biasa</option>
+                <option value="manager">Manager (bisa kelola admin lain)</option>
+              </select>
               <button class="btn primary" id="addAdminBtn">+ Tambah Admin</button>
             </div>
 
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Username</th><th>Dibuat</th><th>Dibuat Oleh</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>Username</th><th>Role</th><th>Dibuat</th><th>Dibuat Oleh</th><th>Aksi</th></tr></thead>
                 <tbody id="adminTable"></tbody>
               </table>
             </div>
@@ -500,6 +523,7 @@ let logs = [];
 let currentUser = "";
 let admins = [];
 let superadminUsername = "";
+let canManageAdmins = false;
 
 function esc(value){
   return String(value ?? "").replace(/[&<>"']/g, c => ({
@@ -641,25 +665,42 @@ async function loadAdmins(){
     const data = await api(API_USERS,{method:"GET"});
     admins = Array.isArray(data.admins) ? data.admins : [];
     superadminUsername = data.superadminUsername || "";
+    canManageAdmins = Boolean(data.canManage);
     renderAdmins();
   }catch(err){
     // Non-fatal — jangan blok seluruh panel kalau ini gagal dimuat.
   }
 }
 
+function roleLabel(role){
+  if(role === "manager") return "Manager";
+  return "Admin biasa";
+}
+
 function renderAdmins(){
   const nameEl = $("superadminName");
   if(nameEl) nameEl.textContent = superadminUsername || "-";
 
+  $("adminNoPermission").classList.toggle("hidden", canManageAdmins);
+  $("adminAddForm").classList.toggle("hidden", !canManageAdmins);
+
   const rows = admins.map(a=>`
     <tr>
       <td><b>${esc(a.username)}</b></td>
+      <td>${
+        canManageAdmins
+          ? `<select data-admin-role="${esc(a.username)}">
+               <option value="admin" ${a.role!=="manager"?"selected":""}>Admin biasa</option>
+               <option value="manager" ${a.role==="manager"?"selected":""}>Manager</option>
+             </select>`
+          : esc(roleLabel(a.role))
+      }</td>
       <td>${formatDate(a.createdAt)}</td>
       <td>${esc(a.createdBy||"-")}</td>
-      <td><button class="icon-btn danger" data-admin-delete="${esc(a.username)}">Hapus</button></td>
+      <td>${canManageAdmins ? `<button class="icon-btn danger" data-admin-delete="${esc(a.username)}">Hapus</button>` : ""}</td>
     </tr>
   `).join("");
-  $("adminTable").innerHTML = rows || `<tr><td colspan="4" class="muted">Belum ada admin tambahan.</td></tr>`;
+  $("adminTable").innerHTML = rows || `<tr><td colspan="5" class="muted">Belum ada admin tambahan.</td></tr>`;
 
   document.querySelectorAll("[data-admin-delete]").forEach(b=>b.onclick=async()=>{
     const username = b.dataset.adminDelete;
@@ -674,22 +715,91 @@ function renderAdmins(){
       flash("Akun admin berhasil dihapus.");
     }catch(err){ flash(err.message,"error"); }
   });
+
+  document.querySelectorAll("[data-admin-role]").forEach(sel=>sel.onchange=async()=>{
+    const username = sel.dataset.adminRole;
+    const role = sel.value;
+    try{
+      const data = await api(API_USERS,{
+        method:"POST",
+        body:JSON.stringify({action:"set_role",username,role})
+      });
+      admins = data.admins || [];
+      renderAdmins();
+      flash(`Role "${username}" diubah jadi ${roleLabel(role)}.`);
+    }catch(err){ flash(err.message,"error"); renderAdmins(); }
+  });
 }
 
 async function addAdmin(){
   const username = $("newAdminUser").value.trim();
   const password = $("newAdminPass").value;
+  const role = $("newAdminRole").value;
   if(!username || !password){ flash("Username dan password wajib diisi.","error"); return; }
   try{
     const data = await api(API_USERS,{
       method:"POST",
-      body:JSON.stringify({action:"add",username,password})
+      body:JSON.stringify({action:"add",username,password,role})
     });
     admins = data.admins || [];
     $("newAdminUser").value = "";
     $("newAdminPass").value = "";
+    $("newAdminRole").value = "admin";
     renderAdmins();
     flash("Akun admin berhasil ditambahkan.");
+  }catch(err){ flash(err.message,"error"); }
+}
+
+function exportBackup(){
+  if(!config){ flash("Konfigurasi belum dimuat.","error"); return; }
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    exportedBy: currentUser,
+    config
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `semesta88-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  flash("Backup berhasil diunduh.");
+}
+
+async function importBackupFromFile(file){
+  let parsed;
+  try{
+    const text = await file.text();
+    parsed = JSON.parse(text);
+  }catch{
+    flash("File bukan JSON yang valid.","error");
+    return;
+  }
+  // Dukung 2 bentuk file: hasil Export di atas ({config:{...}}) atau file
+  // config mentah langsung ({site:{...}, wheel:{...}, tickets:[...]}).
+  const importedConfig = parsed.config && typeof parsed.config === "object" ? parsed.config : parsed;
+  if(!importedConfig || typeof importedConfig !== "object" || !importedConfig.wheel){
+    flash("Struktur file backup tidak dikenali.","error");
+    return;
+  }
+  const ticketCount = Array.isArray(importedConfig.tickets) ? importedConfig.tickets.length : 0;
+  const prizeCount = importedConfig.wheel?.segments?.length || 0;
+  if(!confirm(`Pulihkan backup ini? Isinya: ${prizeCount} hadiah, ${ticketCount} tiket.\nKonfigurasi yang sedang aktif sekarang akan DITIMPA.`)) return;
+
+  try{
+    const data = await api(API_ADMIN,{
+      method:"POST",
+      body:JSON.stringify({action:"import", config: importedConfig})
+    });
+    config = data.config;
+    normalizeClient();
+    fillForm();
+    renderAll();
+    flash("Backup berhasil dipulihkan.");
   }catch(err){ flash(err.message,"error"); }
 }
 
@@ -1021,6 +1131,13 @@ $("addPrizeBtn").onclick=()=>{
 };
 $("addTicketBtn").onclick=addTicket;
 $("addAdminBtn").onclick=addAdmin;
+$("exportBackupBtn").onclick=exportBackup;
+$("importBackupBtn").onclick=()=>$("importBackupFile").click();
+$("importBackupFile").addEventListener("change",()=>{
+  const file = $("importBackupFile").files[0];
+  if(file) importBackupFromFile(file);
+  $("importBackupFile").value = "";
+});
 
 document.querySelectorAll("[data-save]").forEach(btn=>btn.onclick=saveConfig);
 
