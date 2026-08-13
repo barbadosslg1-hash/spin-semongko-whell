@@ -2,7 +2,7 @@ import { addAudit, createSessionCookie, clearSessionCookie, json, requireAdmin, 
 
 export async function onRequestGet({ request, env }) {
   const session = await requireAdmin(request, env.ADMIN_SESSION_SECRET);
-  return json({ authenticated: Boolean(session), username: session?.username || null });
+  return json({ authenticated: Boolean(session), username: session?.username || null, role: session?.role || null });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -39,11 +39,12 @@ export async function onRequestPost({ request, env }) {
       return json({ error: "Unauthorized" }, 401);
     }
 
+    const role = isSuperadmin ? "owner" : (matchedAdmin.role || "admin");
     await addAudit(env.LUCKYWHEEL_KV, { action: "login", username });
     return json(
-      { ok: true, username },
+      { ok: true, username, role },
       200,
-      { "set-cookie": await createSessionCookie(username, env.ADMIN_SESSION_SECRET) }
+      { "set-cookie": await createSessionCookie(username, env.ADMIN_SESSION_SECRET, role) }
     );
   }
 
