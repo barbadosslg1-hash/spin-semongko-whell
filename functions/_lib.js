@@ -1,6 +1,7 @@
 const KV_CONFIG_KEY = "config";
 const KV_LOG_KEY = "logs";
 const KV_ADMINS_KEY = "admins";
+const KV_IP_WHITELIST_KEY = "ip_whitelist";
 const SESSION_COOKIE = "sw_admin";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 jam
 const PBKDF2_ITERATIONS = 100000;
@@ -123,6 +124,30 @@ export async function verifyPassword(password, saltHex, expectedHashHex) {
   if (!saltHex || !expectedHashHex) return false;
   const { hash } = await hashPassword(password, saltHex);
   return hash === expectedHashHex;
+}
+
+export async function loadIpWhitelist(kv) {
+  const raw = await kv.get(KV_IP_WHITELIST_KEY, { type: "json" });
+  return Array.isArray(raw) ? raw : [];
+}
+
+export async function saveIpWhitelist(kv, list) {
+  await kv.put(KV_IP_WHITELIST_KEY, JSON.stringify(list));
+  return list;
+}
+
+// Cloudflare selalu mengisi header ini dengan IP asli pengunjung (tidak bisa
+// dipalsukan oleh client, beda dengan X-Forwarded-For biasa) — ini yang
+// dipakai untuk cek whitelist login.
+export function getClientIp(request) {
+  return request.headers.get("CF-Connecting-IP")
+    || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || "unknown";
+}
+
+export async function isIpWhitelisted(kv, ip) {
+  const list = await loadIpWhitelist(kv);
+  return list.some(entry => entry.ip === ip);
 }
 
 export function json(data, status = 200, extraHeaders = {}) {
