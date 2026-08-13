@@ -26,8 +26,39 @@ export async function onRequestPost({ request, env }) {
   const { action } = body;
 
   if (action === "save") {
+    const oldConfig = await loadConfig(env.LUCKYWHEEL_KV);
+    const oldTickets = oldConfig.tickets || [];
+    const newTickets = body.config?.tickets || [];
+
+    const oldIds = new Set(oldTickets.map(t => t.id ?? t.code));
+    const newIds = new Set(newTickets.map(t => t.id ?? t.code));
+
+    const addedTickets = newTickets.filter(t => !oldIds.has(t.id ?? t.code));
+    const removedTickets = oldTickets.filter(t => !newIds.has(t.id ?? t.code));
+
     const config = await saveConfig(env.LUCKYWHEEL_KV, body.config);
-    await addAudit(env.LUCKYWHEEL_KV, { action: "save_config", username: session.username });
+
+    for (const t of addedTickets) {
+      await addAudit(env.LUCKYWHEEL_KV, {
+        action: "ticket_created",
+        username: session.username,
+        code: t.code,
+        prizeId: t.prizeId || undefined
+      });
+    }
+    for (const t of removedTickets) {
+      await addAudit(env.LUCKYWHEEL_KV, { action: "ticket_deleted", username: session.username, code: t.code });
+    }
+    // Log generik hanya kalau bukan murni perubahan tiket, biar audit log
+    // tidak dobel-catat aksi yang sama (create/delete tiket sudah tercatat
+    // rinci di atas).
+    const onlyTicketsChanged =
+      (addedTickets.length > 0 || removedTickets.length > 0) &&
+      JSON.stringify({ ...oldConfig, tickets: [] }) === JSON.stringify({ ...body.config, tickets: [] });
+    if (!onlyTicketsChanged) {
+      await addAudit(env.LUCKYWHEEL_KV, { action: "save_config", username: session.username });
+    }
+
     return json({ ok: true, config });
   }
 
