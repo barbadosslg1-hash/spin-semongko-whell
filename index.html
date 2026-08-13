@@ -23,12 +23,14 @@
 <script src="https://cdn.jsdelivr.net/gh/zarocknz/javascript-winwheel@2.8.0/Winwheel.min.js"></script>
 <script>
 let cfg, wheel, spinning=false, lastLabelParams=null, wheelImageLoadToken=0;
+let lastIsDesktop=null;
 const $=id=>document.getElementById(id);
 function applyConfig(c){cfg=c; document.documentElement.style.setProperty('--red',c.site.primaryColor);document.documentElement.style.setProperty('--gold',c.site.secondaryColor);$('siteTitle').textContent=c.site.name;$('subtitle').textContent=c.site.subtitle;$('footer').textContent=c.site.footerText||'';document.title=c.site.title||c.site.name;const favEl=document.getElementById('favicon');if(c.site.faviconUrl&&favEl)favEl.href=c.site.faviconUrl;applyBackground();applyPointer();applyCardBg();applyTextColors();applyBodyBgColor();applyControlColors();applyResultColors();if(c.site.logoUrl){$('logo').src=c.site.logoUrl;$('logo').classList.remove('hidden')}else $('logo').classList.add('hidden');$('welcomeTitle').textContent=c.site.welcomeTitle;$('welcomeText').textContent=c.site.welcomeText;if(c.site.showWelcome!==false&&!sessionStorage.getItem('sw_welcome'))$('welcome').classList.remove('hide');else $('welcome').classList.add('hide');drawWheel();}
 
 function applyBackground(){
   if(!cfg || !cfg.site) return;
   const isDesktop = window.matchMedia('(min-width:800px)').matches;
+  lastIsDesktop = isDesktop;
   const url = (isDesktop && cfg.site.backgroundUrlDesktop) ? cfg.site.backgroundUrlDesktop : (cfg.site.backgroundUrl || '');
   const bgVideo = document.getElementById('bgVideo');
   if(!url){
@@ -376,7 +378,7 @@ const data = await r.json();
 localStorage.setItem('sw_cfg', JSON.stringify(data));
 applyConfig(data);const urlCode=new URLSearchParams(location.search).get('code');if(urlCode)$('code').value=urlCode.trim().toUpperCase()}
 let resizeTimer;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (cfg) { drawWheel(); applyBackground(); applyBodyBgColor(); } }, 150); });
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (cfg) { drawWheel(); const nowDesktop = window.matchMedia('(min-width:800px)').matches; if (nowDesktop !== lastIsDesktop) applyBackground(); applyBodyBgColor(); } }, 150); });
 if (window.ResizeObserver) {
   new ResizeObserver(() => {
     clearTimeout(resizeTimer);
